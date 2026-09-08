@@ -34,6 +34,16 @@ const COLOUR_MODES = [
   { value: 'multi', label: 'multicolor' },
 ] as const;
 
+/** `auto` passes no `background` at all, so each variant uses its own default. */
+const BACKGROUNDS = [
+  { value: 'auto', label: 'auto' },
+  { value: 'transparent', label: 'none' },
+  { value: '#fafafa', label: 'white' },
+  { value: '#09090b', label: 'black' },
+] as const;
+
+type BackgroundChoice = (typeof BACKGROUNDS)[number]['value'];
+
 const PALETTES: readonly { name: string; colors?: string[] }[] = [
   { name: 'auto' },
   { name: 'mono', colors: ['#09090b', '#fafafa', '#a1a1aa', '#3f3f46'] },
@@ -71,14 +81,16 @@ export function Playground() {
   const [animation, setAnimation] = useState<Animation>('none');
   const [complexity, setComplexity] = useState(5);
   const [multicolor, setMulticolor] = useState(false);
+  const [backgroundChoice, setBackgroundChoice] = useState<BackgroundChoice>('auto');
   const [paletteIndex, setPaletteIndex] = useState(0);
   const [notice, setNotice] = useState<string | null>(null);
 
   const colors = PALETTES[paletteIndex]?.colors;
+  const background = backgroundChoice === 'auto' ? undefined : backgroundChoice;
 
   const options = useMemo(
-    () => ({ seed, variant, mask, animation, complexity, multicolor, colors }),
-    [seed, variant, mask, animation, complexity, multicolor, colors],
+    () => ({ seed, variant, mask, animation, complexity, multicolor, colors, background }),
+    [seed, variant, mask, animation, complexity, multicolor, colors, background],
   );
 
   const svg = useMemo(() => morphatar({ ...options, size: 256 }), [options]);
@@ -112,6 +124,7 @@ export function Playground() {
     if (mask !== 'squircle') list.push({ name: 'mask', literal: `"${mask}"`, kind: 'string' });
     if (complexity !== 5) list.push({ name: 'complexity', literal: `{${complexity}}`, kind: 'expr' });
     if (multicolor) list.push({ name: 'multicolor', literal: '{true}', kind: 'expr' });
+    if (background) list.push({ name: 'background', literal: `"${background}"`, kind: 'string' });
     if (animation !== 'none') list.push({ name: 'animation', literal: `"${animation}"`, kind: 'string' });
     if (colors) {
       list.push({
@@ -122,7 +135,7 @@ export function Playground() {
     }
     list.push({ name: 'size', literal: '{64}', kind: 'expr' });
     return list;
-  }, [seed, variant, mask, complexity, multicolor, animation, colors]);
+  }, [seed, variant, mask, complexity, multicolor, background, animation, colors]);
 
   return (
     <div className="grid gap-px border-y border-line bg-line xl:grid-cols-[320px_minmax(0,1fr)_minmax(360px,420px)]">
@@ -171,6 +184,18 @@ export function Playground() {
           />
         </Field>
 
+        <Field
+          label="Background"
+          hint={backgroundChoice === 'auto' ? 'per variant' : backgroundChoice === 'transparent' ? 'transparent' : backgroundChoice}
+        >
+          <ToggleGroup
+            value={backgroundChoice}
+            options={BACKGROUNDS}
+            onChange={setBackgroundChoice}
+            columns={4}
+          />
+        </Field>
+
         <Field label="Animation">
           <ToggleGroup value={animation} options={ANIMATIONS} onChange={setAnimation} columns={4} />
         </Field>
@@ -192,6 +217,7 @@ export function Playground() {
             multicolor={multicolor}
             animation={animation}
             colors={colors}
+            background={background}
             size="100%"
             className="w-full max-w-[320px] animate-rise"
           />
@@ -208,6 +234,7 @@ export function Playground() {
                   complexity={complexity}
                   multicolor={multicolor}
                   colors={colors}
+                  background={background}
                   size={px}
                 />
                 <span className="font-mono text-[10px] text-muted">{px}</span>
@@ -251,6 +278,7 @@ export function Playground() {
                   complexity={complexity}
                   multicolor={multicolor}
                   colors={colors}
+                  background={background}
                   size={56}
                 />
                 <span className="font-mono text-[10px] lowercase text-muted">{option.label}</span>
@@ -279,6 +307,7 @@ export function Playground() {
                   complexity={complexity}
                   multicolor={multicolor}
                   colors={colors}
+                  background={background}
                   size="100%"
                   className="w-full"
                 />

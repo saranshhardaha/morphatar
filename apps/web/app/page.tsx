@@ -1,3 +1,4 @@
+import { morphatarPalette } from '@morphatar/core';
 import { Morphatar } from '@morphatar/react';
 import { Playground } from '@/components/Playground';
 
@@ -20,7 +21,7 @@ const PIPELINE = [
   {
     step: '04',
     title: 'Draw',
-    body: 'The same stream feeds one closed-spline blob and its expression, a Bauhaus grid, or a mirrored 5×5 identicon — assembled into a single SVG string.',
+    body: 'The same stream feeds one closed-spline blob and its expression, a Bauhaus grid, or a mirrored 5×5 identicon — assembled into a single SVG string, on transparency unless you ask for a background.',
   },
 ];
 
@@ -45,7 +46,7 @@ export default function Home() {
       <header className="flex flex-col gap-8 px-6 py-14 lg:px-10 lg:py-20">
         <div className="flex items-start justify-between gap-8">
           <div className="flex items-center gap-4">
-            <Morphatar seed="morphatar" variant="organic" mask="squircle" size={44} />
+            <Morphatar seed="morphatar" variant="organic" mask="squircle" background="#fafafa" size={44} />
             <span className="font-mono text-sm uppercase tracking-[0.4em] text-chalk">Morphatar</span>
           </div>
           <a
@@ -72,7 +73,7 @@ export default function Home() {
 
         <dl className="grid max-w-3xl grid-cols-2 gap-px border border-line bg-line sm:grid-cols-4">
           {[
-            ['5.9 KB', 'core, gzipped'],
+            ['6.1 KB', 'core, gzipped'],
             ['0', 'dependencies'],
             ['6', 'expressions'],
             ['100%', 'deterministic'],
@@ -115,6 +116,9 @@ export default function Home() {
                 mask={index % 2 === 0 ? 'squircle' : 'circle'}
                 complexity={4 + (index % 5)}
                 multicolor={index % 4 === 0}
+                // Painted tiles: on a black page a transparent dark blob would
+                // simply vanish, which is the trade-off `background` exists for.
+                background={morphatarPalette({ seed }).background}
                 size="100%"
                 className="w-full"
               />

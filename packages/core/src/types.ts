@@ -12,8 +12,18 @@ export interface MorphatarOptions {
   seed: string;
   /** Shape algorithm. Default: `'organic'`. */
   variant?: Variant;
-  /** Custom palette (hex, `rgb()` or `hsl()`). Omit to derive one from the seed. */
+  /**
+   * Shape palette (hex, `rgb()` or `hsl()`). Every entry is used for shapes —
+   * the background is set only by `background`. Omit to derive one from the seed.
+   */
   colors?: string[];
+  /**
+   * Background fill. Omit for the per-variant default: organic renders on
+   * transparency, geometric and pixel paint the palette's own background, since
+   * their empty cells are negative space rather than absence. Pass
+   * `'transparent'` (or `'none'`) to force transparency on any variant.
+   */
+  background?: string;
   /** Clip silhouette. Default: `'squircle'`. */
   mask?: Mask;
   /** 1–10, controls node count / layer density. Default: `5`. */
@@ -36,8 +46,13 @@ export interface MorphatarOptions {
   title?: string;
 }
 
-/** A resolved background + ordered foreground colors, all guaranteed renderable. */
+/** A resolved palette: ordered foregrounds plus the tone they contrast against. */
 export interface Palette {
+  /**
+   * The palette's contrast anchor — the caller's `background` when given, or a
+   * derived tone otherwise. Foregrounds and eyes are measured against it even
+   * when nothing is painted with it.
+   */
   background: string;
   foreground: string[];
 }
