@@ -29,6 +29,7 @@ export function Morphatar({
   colors,
   mask,
   complexity,
+  multicolor,
   animation,
   size,
   title,
@@ -47,11 +48,12 @@ export function Morphatar({
         colors: colorKey ? colorKey.split(',') : undefined,
         mask,
         complexity,
+        multicolor,
         animation,
         size,
         title,
       }),
-    [seed, variant, colorKey, mask, complexity, animation, size, title],
+    [seed, variant, colorKey, mask, complexity, multicolor, animation, size, title],
   );
 
   const wrapperStyle = useMemo<CSSProperties>(() => {

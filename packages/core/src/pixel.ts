@@ -5,18 +5,15 @@
  * and 5 mirror columns 2 and 1, which is what gives identicons their face-like
  * vertical symmetry.
  */
-import type { Rand } from './prng.js';
 import { randInt } from './prng.js';
-import { clamp, n } from './svg.js';
-import type { Palette } from './types.js';
+import { n } from './svg.js';
+import type { Drawing, RenderContext } from './types.js';
 
 const GRID = 5;
 const CELL = 100 / GRID;
 
-export function renderPixel(rand: Rand, palette: Palette, complexity: number): string[] {
-  const level = clamp(complexity, 1, 10);
-  const density = 0.32 + (level / 10) * 0.36;
-  const multicolor = level >= 7;
+export function renderPixel({ rand, palette, complexity, multicolor }: RenderContext): Drawing {
+  const density = 0.32 + (complexity / 10) * 0.36;
   const primary = palette.foreground[randInt(rand, 0, palette.foreground.length - 1)];
 
   const half = Math.ceil(GRID / 2); // 3 generated columns
@@ -26,9 +23,8 @@ export function renderPixel(rand: Rand, palette: Palette, complexity: number): s
     const line: (string | null)[] = new Array(GRID).fill(null);
     for (let column = 0; column < half; column++) {
       const filled = rand() < density;
-      const fill = multicolor
-        ? palette.foreground[randInt(rand, 0, palette.foreground.length - 1)]
-        : primary;
+      const cellColor = palette.foreground[randInt(rand, 0, palette.foreground.length - 1)];
+      const fill = multicolor ? cellColor : primary;
       if (!filled) continue;
       line[column] = fill;
       line[GRID - 1 - column] = fill; // mirror
@@ -55,5 +51,5 @@ export function renderPixel(rand: Rand, palette: Palette, complexity: number): s
     );
   }
 
-  return elements;
+  return { defs: '', layers: elements };
 }

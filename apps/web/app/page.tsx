@@ -15,12 +15,12 @@ const PIPELINE = [
   {
     step: '03',
     title: 'Colour',
-    body: 'A base hue is drawn, then shifted by 30° or 120° and pushed until every foreground clears 4.5:1 against the background.',
+    body: 'A base hue is drawn, then shifted by 30° or 120° and pushed until every foreground clears 4.5:1 against the background. One colour by default; multicolor merges the palette into a gradient.',
   },
   {
     step: '04',
     title: 'Draw',
-    body: 'The same stream feeds polar blob anchors, Bauhaus grid cells or a mirrored 5×5 identicon, assembled into one SVG string.',
+    body: 'The same stream feeds one closed-spline blob and its expression, a Bauhaus grid, or a mirrored 5×5 identicon — assembled into a single SVG string.',
   },
 ];
 
@@ -65,15 +65,16 @@ export default function Home() {
           </h1>
           <p className="max-w-xl text-[15px] leading-relaxed text-soft">
             A deterministic algorithmic avatar generator. No network, no canvas, no dependencies —
-            just a hash, a counter-based PRNG and a string of SVG.
+            just a hash, a counter-based PRNG and a string of SVG. Every organic blob is a single
+            closed spline with an expression the seed picked for it.
           </p>
         </div>
 
         <dl className="grid max-w-3xl grid-cols-2 gap-px border border-line bg-line sm:grid-cols-4">
           {[
-            ['5.0 KB', 'core, gzipped'],
+            ['5.6 KB', 'core, gzipped'],
             ['0', 'dependencies'],
-            ['3', 'shape variants'],
+            ['6', 'expressions'],
             ['100%', 'deterministic'],
           ].map(([value, label]) => (
             <div key={label} className="bg-ink px-4 py-5">
@@ -113,6 +114,7 @@ export default function Home() {
                 variant={index % 3 === 0 ? 'organic' : index % 3 === 1 ? 'geometric' : 'pixel'}
                 mask={index % 2 === 0 ? 'squircle' : 'circle'}
                 complexity={4 + (index % 5)}
+                multicolor={index % 4 === 0}
                 size="100%"
                 className="w-full"
               />

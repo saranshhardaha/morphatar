@@ -6,7 +6,7 @@ One seed in, the same SVG out — on every machine, in every runtime, forever.
 No `Math.random()`, no canvas, no network, no images to host.
 
 ```
-5.0 KB gzipped · 0 runtime dependencies · 3 shape variants
+5.6 KB gzipped · 0 runtime dependencies · 3 shape variants · 6 expressions
 ```
 
 ## Packages
@@ -51,6 +51,7 @@ interface MorphatarProps {
   colors?: string[];                                  // hex / rgb() / hsl()
   mask?: 'circle' | 'squircle' | 'hexagon' | 'none';  // default: 'squircle'
   complexity?: number;                                // 1–10, default: 5
+  multicolor?: boolean;                               // default: false
   animation?: 'none' | 'pulse' | 'morph' | 'spin';    // default: 'none'
   size?: number | string;                             // default: '100%'
   title?: string;                                     // aria-label, default: 'Avatar'
@@ -62,8 +63,25 @@ interface MorphatarProps {
 
 Extra exports from `@morphatar/core`: `morphatarPalette()` (resolve a seed's
 colors without rendering), plus the building blocks — `fnv1a`, `sfc32`,
-`createRandom`, `createPalette`, `contrastRatio`, `renderOrganic`,
-`renderGeometric`, `renderPixel`, `maskShape`.
+`createRandom`, `createPalette`, `contrastRatio`, `renderEyes`, `EXPRESSIONS`,
+`maskShape`, and the three generators `renderOrganic`, `renderGeometric` and
+`renderPixel`, each taking a `RenderContext` and returning a `Drawing`
+(`{ defs, layers }`).
+
+### Colour modes
+
+Avatars are **single-colour by default**: one foreground for the whole shape.
+`multicolor` opts into the full palette, and each variant blends it differently:
+
+| Variant | `multicolor: false` | `multicolor: true` |
+| --- | --- | --- |
+| organic | one flat foreground | the palette merged into a single `<linearGradient>` at a seed-chosen angle |
+| geometric | every cell shares one colour | each cell picks its own |
+| pixel | every pixel shares one colour | each pixel picks its own |
+
+The organic blob is always **one** closed path, never a stack — overlapping
+shapes read as mud at avatar sizes, so multiple colours are merged into the fill
+rather than split across layers.
 
 ### Notes
 
@@ -86,9 +104,15 @@ colors without rendering), plus the building blocks — `fnv1a`, `sfc32`,
    changing an avatar's colors. Generated foregrounds target distinct lightness
    levels and are pushed until each clears **4.5:1** against the background.
 4. **Draw** — the same stream feeds one of three generators:
-   - **organic** — 5–8 anchor points laid out in polar coordinates, radii pushed
-     and pulled by the PRNG, joined with a closed Catmull–Rom spline emitted as
-     cubic beziers.
+   - **organic** — a single blob: 5–10 anchor points laid out in polar
+     coordinates, radii pushed and pulled by the PRNG, joined with a *closed*
+     Catmull–Rom spline emitted as cubic beziers. Closing the spline is what
+     removes every hard edge — the curve is C1-continuous across the seam too.
+     Complexity is the anchor count, so the shape goes from near-circular at 1
+     to lobed at 10. Every blob gets a pair of eyes, drawn from the same stream:
+     `dot`, `wide`, `oval`, `sleepy`, `happy` or `wink`. They are painted in the
+     *background* colour, which reads as punched-out holes and inherits the
+     palette's contrast guarantee for free.
    - **geometric** — a 3×3 or 4×4 Bauhaus grid; each cell becomes a disc, a
      quarter disc, a triangle or empty space, snapped to a right-angle rotation.
    - **pixel** — a 5×5 identicon where only the left three columns are generated
@@ -109,8 +133,9 @@ pnpm typecheck      # every workspace
 
 The test suite is the contract: it pins the FNV-1a reference vectors, asserts
 byte-identical output across renders, verifies the pixel grid really is
-mirrored, checks that a custom palette is never escaped, and sweeps 300 seeds
-for the contrast floor.
+mirrored, checks that organic draws exactly one blob and one pair of eyes,
+that single-colour mode never leaks a second colour, that a custom palette is
+never escaped, and sweeps 300 seeds for the contrast floor.
 
 ## Licence
 

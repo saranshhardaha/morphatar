@@ -121,7 +121,18 @@ describe('morphatar markup', () => {
 
   it('applies defaults: organic, squircle, no animation, 100%', () => {
     const svg = morphatar({ seed: 'defaults' });
-    assert.equal(svg, morphatar({ seed: 'defaults', variant: 'organic', mask: 'squircle', animation: 'none', size: '100%', complexity: 5 }));
+    assert.equal(
+      svg,
+      morphatar({
+        seed: 'defaults',
+        variant: 'organic',
+        mask: 'squircle',
+        animation: 'none',
+        size: '100%',
+        complexity: 5,
+        multicolor: false,
+      }),
+    );
     assert.ok(svg.includes('<path'));
     assert.ok(svg.includes('<clipPath'));
     assert.ok(!svg.includes('<style>'));
@@ -145,11 +156,17 @@ describe('morphatar markup', () => {
   });
 
   it('staggers morph across layers and wraps pulse/spin once', () => {
-    const morph = morphatar({ seed: 'motion', animation: 'morph', complexity: 10 });
+    const morph = morphatar({ seed: 'motion', variant: 'geometric', animation: 'morph', complexity: 10 });
     assert.ok(morph.includes('animation-delay:0s'));
     assert.ok(morph.includes('animation-delay:0.4s'));
     const spin = morphatar({ seed: 'motion', animation: 'spin' });
     assert.equal(spin.split('class="').length - 1, 1);
+  });
+
+  it('keeps an organic face on a single morph layer', () => {
+    // Blob and eyes must not drift apart, so organic ships exactly one layer.
+    const morph = morphatar({ seed: 'motion', animation: 'morph', complexity: 10 });
+    assert.equal(morph.split('animation-delay:').length - 1, 1);
   });
 
   it('honours numeric and string sizes', () => {
@@ -185,8 +202,62 @@ describe('morphatar markup', () => {
 
 describe('variants', () => {
   it('scales node count with complexity', () => {
-    const count = (svg) => (svg.match(/<path |<rect |<circle /g) || []).length;
-    assert.ok(count(morphatar({ seed: 'v', complexity: 10 })) > count(morphatar({ seed: 'v', complexity: 1 })));
+    // Organic is always one blob, so complexity shows up as spline segments.
+    const segments = (svg) => (svg.match(/C/g) || []).length;
+    assert.ok(
+      segments(morphatar({ seed: 'v', complexity: 10 })) >
+        segments(morphatar({ seed: 'v', complexity: 1 })),
+    );
+
+    const cells = (svg) => (svg.match(/<g transform=/g) || []).length;
+    assert.ok(
+      cells(morphatar({ seed: 'v', variant: 'geometric', complexity: 10 })) >
+        cells(morphatar({ seed: 'v', variant: 'geometric', complexity: 1 })),
+    );
+  });
+
+  it('draws exactly one blob and one pair of eyes', () => {
+    for (const seed of SEEDS) {
+      // mask: 'none' keeps the squircle clip path out of the match.
+      const svg = morphatar({ seed, complexity: 9, mask: 'none' });
+      const blobs = [...svg.matchAll(/<path d="M[^"]+Z"/g)];
+      assert.equal(blobs.length, 1, `seed "${seed}" drew ${blobs.length} blobs`);
+
+      // Two eyes, whatever the expression: circles, ellipses or stroked paths.
+      const eyes =
+        (svg.match(/<circle cx=/g) || []).length +
+        (svg.match(/<ellipse /g) || []).length +
+        (svg.match(/stroke-linecap="round"/g) || []).length;
+      assert.equal(eyes, 2, `seed "${seed}" drew ${eyes} eyes`);
+    }
+  });
+
+  it('varies the expression across seeds', () => {
+    const shapes = new Set(
+      Array.from({ length: 60 }, (_, i) => {
+        const svg = morphatar({ seed: `face-${i}` });
+        return [
+          (svg.match(/<circle cx=/g) || []).length,
+          (svg.match(/<ellipse /g) || []).length,
+          (svg.match(/stroke-linecap/g) || []).length,
+          svg.includes('Q') ? 'q' : '',
+        ].join('/');
+      }),
+    );
+    assert.ok(shapes.size >= 3, `only ${shapes.size} distinct eye shapes over 60 seeds`);
+  });
+
+  it('paints eyes in the background color', () => {
+    const colors = ['#101010', '#fafafa', '#8b8b8b'];
+    for (const seed of SEEDS) {
+      const svg = morphatar({ seed, colors, mask: 'none' });
+      const background = svg.match(/<rect width="100" height="100" fill="([^"]+)"/)[1];
+      const eyeFills = [...svg.matchAll(/<(?:circle|ellipse)[^>]*fill="([^"]+)"/g)].map((m) => m[1]);
+      const eyeStrokes = [...svg.matchAll(/stroke="([^"]+)"/g)].map((m) => m[1]);
+      for (const color of [...eyeFills, ...eyeStrokes]) {
+        assert.equal(color, background, `seed "${seed}"`);
+      }
+    }
   });
 
   it('mirrors the pixel grid horizontally', () => {
@@ -233,11 +304,18 @@ describe('palette', () => {
 
   it('only paints with colors from a custom palette', () => {
     const colors = ['#0a0a0a', '#fafafa', '#737373', '#d4d4d4'];
-    const allowed = new Set(colors);
+    const allowed = new Set([...colors, 'none']);
     for (const variant of ['organic', 'geometric', 'pixel']) {
-      const svg = morphatar({ seed: 'custom', variant, colors, complexity: 9 });
-      for (const [, fill] of svg.matchAll(/fill="([^"]+)"/g)) {
-        assert.ok(allowed.has(fill), `${variant} used unexpected fill ${fill}`);
+      for (const multicolor of [false, true]) {
+        const svg = morphatar({ seed: 'custom', variant, colors, complexity: 9, multicolor });
+        const used = [
+          ...[...svg.matchAll(/fill="([^"]+)"/g)].map((m) => m[1]),
+          ...[...svg.matchAll(/stroke="([^"]+)"/g)].map((m) => m[1]),
+          ...[...svg.matchAll(/stop-color="([^"]+)"/g)].map((m) => m[1]),
+        ].filter((value) => !value.startsWith('url('));
+        for (const color of used) {
+          assert.ok(allowed.has(color), `${variant} used unexpected color ${color}`);
+        }
       }
     }
   });
@@ -257,5 +335,62 @@ describe('palette', () => {
     assert.ok(Math.abs(contrastRatio('#000000', '#ffffff') - 21) < 1e-6);
     assert.ok(Math.abs(contrastRatio('#ffffff', '#ffffff') - 1) < 1e-6);
     assert.ok(Math.abs(contrastRatio('#000', '#fff') - 21) < 1e-6);
+  });
+});
+
+describe('multicolor', () => {
+  const paletteOf = (seed) => morphatarPalette({ seed });
+  const fillsOf = (svg) =>
+    [...svg.matchAll(/<(?:rect|circle|path|ellipse)[^>]*fill="(#[^"]+)"/g)].map((m) => m[1]);
+
+  it('is off by default', () => {
+    for (const variant of ['organic', 'geometric', 'pixel']) {
+      assert.equal(
+        morphatar({ seed: 'mc', variant }),
+        morphatar({ seed: 'mc', variant, multicolor: false }),
+        variant,
+      );
+    }
+  });
+
+  it('holds every grid cell to one color when off', () => {
+    for (const variant of ['geometric', 'pixel']) {
+      for (const seed of SEEDS) {
+        const svg = morphatar({ seed, variant, complexity: 10, mask: 'none' });
+        const background = paletteOf(seed).background;
+        const shapeFills = new Set(fillsOf(svg).filter((fill) => fill !== background));
+        assert.ok(shapeFills.size <= 1, `${variant}/"${seed}" used ${shapeFills.size} colors`);
+      }
+    }
+  });
+
+  it('uses more than one color when on', () => {
+    let multiColored = 0;
+    for (const seed of SEEDS) {
+      const svg = morphatar({ seed, variant: 'geometric', complexity: 10, multicolor: true });
+      const background = paletteOf(seed).background;
+      if (new Set(fillsOf(svg).filter((fill) => fill !== background)).size > 1) multiColored++;
+    }
+    assert.ok(
+      multiColored >= SEEDS.length - 1,
+      `only ${multiColored}/${SEEDS.length} seeds multi-coloured`,
+    );
+  });
+
+  it('merges organic colors into one scoped gradient instead of layering them', () => {
+    const flat = morphatar({ seed: 'grad' });
+    assert.ok(!flat.includes('linearGradient'));
+
+    const blended = morphatar({ seed: 'grad', multicolor: true });
+    const id = blended.match(/<linearGradient id="([^"]+)"/)[1];
+    assert.ok(blended.includes(`fill="url(#${id})"`));
+    // One blob, one gradient — never a stack of overlapping shapes.
+    assert.equal(blended.split('<linearGradient').length - 1, 1);
+    assert.ok(blended.match(/<stop /g).length >= 2);
+    // Scoped per configuration, so two avatars can share a page.
+    assert.notEqual(
+      id,
+      morphatar({ seed: 'grad-2', multicolor: true }).match(/<linearGradient id="([^"]+)"/)[1],
+    );
   });
 });
