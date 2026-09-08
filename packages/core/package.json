@@ -1,0 +1,25 @@
+{
+  "name": "@morphatar/core",
+  "version": "0.1.0",
+  "description": "Deterministic algorithmic avatar generator. Zero dependencies, raw SVG output.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": ["dist"],
+  "keywords": ["avatar", "identicon", "svg", "deterministic", "generative", "boring-avatars"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "pnpm build && node --test test/*.test.js"
+  }
+}
