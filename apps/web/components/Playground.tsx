@@ -29,6 +29,11 @@ const ANIMATIONS: readonly { value: Animation; label: string }[] = [
   { value: 'spin', label: 'spin' },
 ];
 
+const COLOUR_MODES = [
+  { value: 'single', label: 'single' },
+  { value: 'multi', label: 'multicolor' },
+] as const;
+
 const PALETTES: readonly { name: string; colors?: string[] }[] = [
   { name: 'auto' },
   { name: 'mono', colors: ['#09090b', '#fafafa', '#a1a1aa', '#3f3f46'] },
@@ -65,14 +70,15 @@ export function Playground() {
   const [mask, setMask] = useState<Mask>('squircle');
   const [animation, setAnimation] = useState<Animation>('none');
   const [complexity, setComplexity] = useState(5);
+  const [multicolor, setMulticolor] = useState(false);
   const [paletteIndex, setPaletteIndex] = useState(0);
   const [notice, setNotice] = useState<string | null>(null);
 
   const colors = PALETTES[paletteIndex]?.colors;
 
   const options = useMemo(
-    () => ({ seed, variant, mask, animation, complexity, colors }),
-    [seed, variant, mask, animation, complexity, colors],
+    () => ({ seed, variant, mask, animation, complexity, multicolor, colors }),
+    [seed, variant, mask, animation, complexity, multicolor, colors],
   );
 
   const svg = useMemo(() => morphatar({ ...options, size: 256 }), [options]);
@@ -105,6 +111,7 @@ export function Playground() {
     if (variant !== 'organic') list.push({ name: 'variant', literal: `"${variant}"`, kind: 'string' });
     if (mask !== 'squircle') list.push({ name: 'mask', literal: `"${mask}"`, kind: 'string' });
     if (complexity !== 5) list.push({ name: 'complexity', literal: `{${complexity}}`, kind: 'expr' });
+    if (multicolor) list.push({ name: 'multicolor', literal: '{true}', kind: 'expr' });
     if (animation !== 'none') list.push({ name: 'animation', literal: `"${animation}"`, kind: 'string' });
     if (colors) {
       list.push({
@@ -115,7 +122,7 @@ export function Playground() {
     }
     list.push({ name: 'size', literal: '{64}', kind: 'expr' });
     return list;
-  }, [seed, variant, mask, complexity, animation, colors]);
+  }, [seed, variant, mask, complexity, multicolor, animation, colors]);
 
   return (
     <div className="grid gap-px border-y border-line bg-line xl:grid-cols-[320px_minmax(0,1fr)_minmax(360px,420px)]">
@@ -155,6 +162,15 @@ export function Playground() {
           <Slider value={complexity} min={1} max={10} onChange={setComplexity} ariaLabel="Complexity" />
         </Field>
 
+        <Field label="Colour mode" hint={multicolor ? 'full palette' : 'one colour'}>
+          <ToggleGroup
+            value={multicolor ? 'multi' : 'single'}
+            options={COLOUR_MODES}
+            onChange={(next) => setMulticolor(next === 'multi')}
+            columns={2}
+          />
+        </Field>
+
         <Field label="Animation">
           <ToggleGroup value={animation} options={ANIMATIONS} onChange={setAnimation} columns={4} />
         </Field>
@@ -173,6 +189,7 @@ export function Playground() {
             variant={variant}
             mask={mask}
             complexity={complexity}
+            multicolor={multicolor}
             animation={animation}
             colors={colors}
             size="100%"
@@ -189,6 +206,7 @@ export function Playground() {
                   variant={variant}
                   mask={mask}
                   complexity={complexity}
+                  multicolor={multicolor}
                   colors={colors}
                   size={px}
                 />
@@ -231,6 +249,7 @@ export function Playground() {
                   variant={option.value}
                   mask={mask}
                   complexity={complexity}
+                  multicolor={multicolor}
                   colors={colors}
                   size={56}
                 />
@@ -258,6 +277,7 @@ export function Playground() {
                   variant={variant}
                   mask={mask}
                   complexity={complexity}
+                  multicolor={multicolor}
                   colors={colors}
                   size="100%"
                   className="w-full"

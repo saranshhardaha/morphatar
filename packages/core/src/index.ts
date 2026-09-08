@@ -17,13 +17,31 @@ import { renderOrganic } from './organic.js';
 import { renderPixel } from './pixel.js';
 import { createRandom, fnv1a } from './prng.js';
 import { clamp, escapeXml, n } from './svg.js';
-import type { Animation, Mask, MorphatarOptions, Palette, Variant } from './types.js';
+import type {
+  Animation,
+  Drawing,
+  Mask,
+  MorphatarOptions,
+  Palette,
+  RenderContext,
+  Variant,
+} from './types.js';
 
-export type { Animation, Mask, MorphatarOptions, Palette, Variant } from './types.js';
+export type {
+  Animation,
+  Drawing,
+  Mask,
+  MorphatarOptions,
+  Palette,
+  RenderContext,
+  Variant,
+} from './types.js';
 export type { Rand } from './prng.js';
 export { createRandom, fnv1a, pick, randInt, sfc32, shuffle } from './prng.js';
 export { contrastRatio, createPalette, hslToHex, luminance, parseColor, MIN_CONTRAST } from './colors.js';
 export { blobPath, renderOrganic } from './organic.js';
+export { renderEyes, EXPRESSIONS } from './face.js';
+export type { Expression } from './face.js';
 export { renderGeometric } from './geometric.js';
 export { renderPixel } from './pixel.js';
 export { maskShape, SQUIRCLE_PATH } from './masks.js';
@@ -33,6 +51,7 @@ export const DEFAULTS = {
   mask: 'squircle' as Mask,
   animation: 'none' as Animation,
   complexity: 5,
+  multicolor: false,
   size: '100%' as number | string,
   title: 'Avatar',
 };
@@ -43,6 +62,7 @@ interface ResolvedOptions {
   mask: Mask;
   animation: Animation;
   complexity: number;
+  multicolor: boolean;
   size: number | string;
   title: string;
   colors: string[] | undefined;
@@ -55,6 +75,7 @@ function resolve(options: MorphatarOptions): ResolvedOptions {
     mask: options.mask ?? DEFAULTS.mask,
     animation: options.animation ?? DEFAULTS.animation,
     complexity: clamp(Math.round(options.complexity ?? DEFAULTS.complexity), 1, 10),
+    multicolor: options.multicolor ?? DEFAULTS.multicolor,
     size: options.size ?? DEFAULTS.size,
     title: options.title ?? DEFAULTS.title,
     colors: options.colors && options.colors.length > 0 ? options.colors : undefined,
@@ -73,6 +94,7 @@ function instanceId(resolved: ResolvedOptions): string {
     resolved.mask,
     resolved.animation,
     resolved.complexity,
+    resolved.multicolor ? 'm' : '',
     resolved.colors ? resolved.colors.join(',') : '',
   ].join('|');
   return 'm' + fnv1a(key).toString(36);
@@ -97,25 +119,33 @@ export function morphatar(options: MorphatarOptions): string {
   // nudging complexity restyles the geometry without changing the colors.
   const palette = createPalette(rand, resolved.colors);
 
-  const shapes =
-    resolved.variant === 'geometric'
-      ? renderGeometric(rand, palette, resolved.complexity)
-      : resolved.variant === 'pixel'
-        ? renderPixel(rand, palette, resolved.complexity)
-        : renderOrganic(rand, palette, resolved.complexity);
-
   const uid = instanceId(resolved);
+  const context: RenderContext = {
+    rand,
+    palette,
+    complexity: resolved.complexity,
+    multicolor: resolved.multicolor,
+    uid,
+  };
+
+  const drawing: Drawing =
+    resolved.variant === 'geometric'
+      ? renderGeometric(context)
+      : resolved.variant === 'pixel'
+        ? renderPixel(context)
+        : renderOrganic(context);
+
   const clip = maskShape(resolved.mask);
   const css = animationCss(resolved.animation, uid);
 
   const body = isPerLayer(resolved.animation)
-    ? shapes
+    ? drawing.layers
         .map(
-          (shape, i) =>
-            `<g class="${layerClass(uid)}" style="animation-delay:${n(i * 0.4)}s">${shape}</g>`,
+          (layer, i) =>
+            `<g class="${layerClass(uid)}" style="animation-delay:${n(i * 0.4)}s">${layer}</g>`,
         )
         .join('')
-    : shapes.join('');
+    : drawing.layers.join('');
 
   // The background sits outside the animated group so `spin` never exposes a
   // bare corner, and the clip group sits outside both so the mask holds still.
@@ -125,9 +155,10 @@ export function morphatar(options: MorphatarOptions): string {
       ? `<g class="${rootClass(uid)}">${body}</g>`
       : body);
 
-  const content = clip
-    ? `<defs><clipPath id="${uid}c">${clip}</clipPath></defs><g clip-path="url(#${uid}c)">${painted}</g>`
-    : painted;
+  const defs = (clip ? `<clipPath id="${uid}c">${clip}</clipPath>` : '') + drawing.defs;
+  const content =
+    (defs ? `<defs>${defs}</defs>` : '') +
+    (clip ? `<g clip-path="url(#${uid}c)">${painted}</g>` : painted);
 
   const dim = dimension(resolved.size);
 

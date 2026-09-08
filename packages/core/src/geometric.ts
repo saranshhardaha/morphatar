@@ -4,10 +4,9 @@
  * A 3×3 or 4×4 grid; every cell independently becomes a disc, a quarter disc,
  * a triangle or empty space, then snaps to one of four right-angle rotations.
  */
-import type { Rand } from './prng.js';
 import { pick, randInt } from './prng.js';
-import { clamp, n } from './svg.js';
-import type { Palette } from './types.js';
+import { n } from './svg.js';
+import type { Drawing, RenderContext } from './types.js';
 
 const ROTATIONS = [0, 90, 180, 270] as const;
 const SHAPES = ['circle', 'quarter', 'triangle'] as const;
@@ -26,12 +25,18 @@ function cellShape(shape: Shape, size: number, fill: string): string {
   }
 }
 
-export function renderGeometric(rand: Rand, palette: Palette, complexity: number): string[] {
-  const level = clamp(complexity, 1, 10);
-  const columns = level <= 5 ? 3 : 4;
+export function renderGeometric({
+  rand,
+  palette,
+  complexity,
+  multicolor,
+}: RenderContext): Drawing {
+  const columns = complexity <= 5 ? 3 : 4;
   const cell = 100 / columns;
   // Sparse at low complexity, nearly packed at 10.
-  const density = 0.42 + (level / 10) * 0.45;
+  const density = 0.42 + (complexity / 10) * 0.45;
+  // Single-color grids pick one foreground and hold it for every cell.
+  const primary = palette.foreground[randInt(rand, 0, palette.foreground.length - 1)];
 
   const elements: string[] = [];
   for (let row = 0; row < columns; row++) {
@@ -39,7 +44,8 @@ export function renderGeometric(rand: Rand, palette: Palette, complexity: number
       const filled = rand() < density;
       const shape = pick(rand, SHAPES);
       const rotation = pick(rand, ROTATIONS);
-      const fill = palette.foreground[randInt(rand, 0, palette.foreground.length - 1)];
+      const cellColor = palette.foreground[randInt(rand, 0, palette.foreground.length - 1)];
+      const fill = multicolor ? cellColor : primary;
       if (!filled) continue;
 
       const x = n(column * cell);
@@ -57,9 +63,9 @@ export function renderGeometric(rand: Rand, palette: Palette, complexity: number
   if (elements.length === 0) {
     const offset = n((100 - cell) / 2);
     elements.push(
-      `<g transform="translate(${offset} ${offset})">${cellShape('circle', cell, palette.foreground[0])}</g>`,
+      `<g transform="translate(${offset} ${offset})">${cellShape('circle', cell, primary)}</g>`,
     );
   }
 
-  return elements;
+  return { defs: '', layers: elements };
 }
