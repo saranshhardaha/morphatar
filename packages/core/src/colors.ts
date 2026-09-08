@@ -1,13 +1,18 @@
 /**
  * Palette derivation.
  *
- * Two modes: pick deterministically out of a caller-supplied array, or invent a
- * harmonic palette from the seed. In both cases foregrounds are ordered so the
- * highest-contrast colors are used first, and generated palettes are pushed to
- * at least the WCAG AA 4.5:1 ratio against the background.
+ * Two modes: order a caller-supplied array, or invent a harmonic palette from
+ * the seed. In both cases foregrounds are ordered so the highest-contrast
+ * colors come first, and generated palettes are pushed to at least the WCAG AA
+ * 4.5:1 ratio against the contrast anchor.
+ *
+ * The anchor is the caller's `background` when they pass one, and a derived
+ * tone otherwise. It is what foregrounds and eyes are measured against — it is
+ * not necessarily painted, since an avatar may render on transparency.
  */
 import type { Rand } from './prng.js';
 import { shuffle } from './prng.js';
+import { escapeXml } from './svg.js';
 import type { Palette } from './types.js';
 
 export const MIN_CONTRAST = 4.5;
@@ -141,23 +146,41 @@ function contrastingTone(
   return backgroundIsDark ? '#ffffff' : '#000000';
 }
 
+/** Black or white — whichever contrasts better with the *worst* of the palette. */
+function anchorFor(colors: string[]): string {
+  const worstAgainst = (anchor: string) =>
+    colors.reduce((worst, color) => Math.min(worst, contrastRatio(color, anchor)), Infinity);
+  return worstAgainst('#ffffff') >= worstAgainst('#000000') ? '#ffffff' : '#000000';
+}
+
+export interface PaletteOptions {
+  /** Caller-supplied shape colors. Every entry becomes a foreground. */
+  colors?: string[];
+  /**
+   * Caller-supplied contrast anchor. `null` or omitted derives one — either
+   * black/white against a custom palette, or a generated tone.
+   */
+  background?: string | null;
+}
+
 /**
  * Resolve the palette for one avatar.
  *
  * Called before any shape generator so that changing `variant` or `complexity`
- * keeps a seed's colors stable — only the geometry moves.
+ * keeps a seed's colors stable — only the geometry moves. The generated
+ * background is computed even when the caller overrides it, so the PRNG stream
+ * stays aligned and passing `background` never reshuffles the shapes.
  */
-export function createPalette(rand: Rand, custom?: string[]): Palette {
-  const provided = custom?.filter((c) => typeof c === 'string' && c.trim().length > 0);
+export function createPalette(rand: Rand, options: PaletteOptions = {}): Palette {
+  const given = options.background ?? null;
+  // Caller-supplied strings land in attribute values; escape them at intake.
+  const provided = options.colors
+    ?.filter((color) => typeof color === 'string' && color.trim().length > 0)
+    .map((color) => escapeXml(color.trim()));
 
   if (provided && provided.length > 0) {
-    if (provided.length === 1) {
-      const only = provided[0];
-      return { background: only, foreground: [contrastingTone(0, 0, only, 0.5)] };
-    }
-    const pool = provided.slice();
-    const background = pool.splice(Math.floor(rand() * pool.length), 1)[0];
-    const foreground = shuffle(rand, pool).sort(
+    const background = given ?? anchorFor(provided);
+    const foreground = shuffle(rand, provided).sort(
       (a, b) => contrastRatio(b, background) - contrastRatio(a, background),
     );
     return { background, foreground };
@@ -165,12 +188,12 @@ export function createPalette(rand: Rand, custom?: string[]): Palette {
 
   const baseHue = rand() * 360;
   const shift = rand() < 0.5 ? 30 : 120;
-  const backgroundIsDark = rand() < 0.5;
+  const generatedIsDark = rand() < 0.5;
   const backgroundSaturation = 0.16 + rand() * 0.34;
-  const backgroundLightness = backgroundIsDark ? 0.07 + rand() * 0.07 : 0.9 + rand() * 0.07;
-  const background = hslToHex(baseHue, backgroundSaturation, backgroundLightness);
+  const backgroundLightness = generatedIsDark ? 0.07 + rand() * 0.07 : 0.9 + rand() * 0.07;
+  const background = given ?? hslToHex(baseHue, backgroundSaturation, backgroundLightness);
 
-  const targets = backgroundIsDark ? TONE_TARGETS_ON_DARK : TONE_TARGETS_ON_LIGHT;
+  const targets = luminance(background) < 0.5 ? TONE_TARGETS_ON_DARK : TONE_TARGETS_ON_LIGHT;
   const foreground: string[] = [];
   for (let i = 0; i < targets.length; i++) {
     const saturation = 0.5 + rand() * 0.45;

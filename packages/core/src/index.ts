@@ -39,6 +39,7 @@ export type {
 export type { Rand } from './prng.js';
 export { createRandom, fnv1a, pick, randInt, sfc32, shuffle } from './prng.js';
 export { contrastRatio, createPalette, hslToHex, luminance, parseColor, MIN_CONTRAST } from './colors.js';
+export type { PaletteOptions } from './colors.js';
 export { blobPath, renderOrganic } from './organic.js';
 export { renderEyes, EXPRESSIONS } from './face.js';
 export type { Expression } from './face.js';
@@ -52,6 +53,8 @@ export const DEFAULTS = {
   animation: 'none' as Animation,
   complexity: 5,
   multicolor: false,
+  /** `null` = transparent for organic, the palette's own tone for the grids. */
+  background: null as string | null,
   size: '100%' as number | string,
   title: 'Avatar',
 };
@@ -60,6 +63,10 @@ interface ResolvedOptions {
   seed: string;
   variant: Variant;
   mask: Mask;
+  /** Normalized: `null` means transparent. */
+  background: string | null;
+  /** Whether the caller said anything about the background at all. */
+  backgroundGiven: boolean;
   animation: Animation;
   complexity: number;
   multicolor: boolean;
@@ -68,11 +75,22 @@ interface ResolvedOptions {
   colors: string[] | undefined;
 }
 
+/** `undefined` → not given; `'transparent'` / `'none'` / blank → given as none. */
+function normalizeBackground(value: string | undefined): string | null {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  const lowered = trimmed.toLowerCase();
+  if (!trimmed || lowered === 'transparent' || lowered === 'none') return null;
+  return escapeXml(trimmed);
+}
+
 function resolve(options: MorphatarOptions): ResolvedOptions {
   return {
     seed: String(options.seed ?? ''),
     variant: options.variant ?? DEFAULTS.variant,
     mask: options.mask ?? DEFAULTS.mask,
+    background: normalizeBackground(options.background),
+    backgroundGiven: options.background !== undefined,
     animation: options.animation ?? DEFAULTS.animation,
     complexity: clamp(Math.round(options.complexity ?? DEFAULTS.complexity), 1, 10),
     multicolor: options.multicolor ?? DEFAULTS.multicolor,
@@ -95,6 +113,7 @@ function instanceId(resolved: ResolvedOptions): string {
     resolved.animation,
     resolved.complexity,
     resolved.multicolor ? 'm' : '',
+    resolved.backgroundGiven ? String(resolved.background) : '',
     resolved.colors ? resolved.colors.join(',') : '',
   ].join('|');
   return 'm' + fnv1a(key).toString(36);
@@ -107,7 +126,10 @@ function dimension(size: number | string): string {
 /** Resolve the palette a seed maps to, without rendering anything. */
 export function morphatarPalette(options: MorphatarOptions): Palette {
   const resolved = resolve(options);
-  return createPalette(createRandom(resolved.seed), resolved.colors);
+  return createPalette(createRandom(resolved.seed), {
+    colors: resolved.colors,
+    background: resolved.background,
+  });
 }
 
 /** Render an avatar to a standalone `<svg>` string. */
@@ -117,7 +139,10 @@ export function morphatar(options: MorphatarOptions): string {
 
   // Palette is drawn first and from the seed alone, so switching variant or
   // nudging complexity restyles the geometry without changing the colors.
-  const palette = createPalette(rand, resolved.colors);
+  const palette = createPalette(rand, {
+    colors: resolved.colors,
+    background: resolved.background,
+  });
 
   const uid = instanceId(resolved);
   const context: RenderContext = {
@@ -147,10 +172,19 @@ export function morphatar(options: MorphatarOptions): string {
         .join('')
     : drawing.layers.join('');
 
+  // Organic is a floating blob, so it renders on transparency unless a
+  // background is asked for. The grid variants paint one by default: their
+  // empty cells are negative space, not absence.
+  const backgroundFill = resolved.backgroundGiven
+    ? resolved.background
+    : resolved.variant === 'organic'
+      ? null
+      : palette.background;
+
   // The background sits outside the animated group so `spin` never exposes a
   // bare corner, and the clip group sits outside both so the mask holds still.
   const painted =
-    `<rect width="100" height="100" fill="${palette.background}"/>` +
+    (backgroundFill ? `<rect width="100" height="100" fill="${backgroundFill}"/>` : '') +
     (resolved.animation === 'pulse' || resolved.animation === 'spin'
       ? `<g class="${rootClass(uid)}">${body}</g>`
       : body);

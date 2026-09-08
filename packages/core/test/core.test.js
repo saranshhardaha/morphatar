@@ -247,11 +247,12 @@ describe('variants', () => {
     assert.ok(shapes.size >= 3, `only ${shapes.size} distinct eye shapes over 60 seeds`);
   });
 
-  it('paints eyes in the background color', () => {
+  it('paints eyes in the contrast anchor', () => {
     const colors = ['#101010', '#fafafa', '#8b8b8b'];
     for (const seed of SEEDS) {
-      const svg = morphatar({ seed, colors, mask: 'none' });
+      const svg = morphatar({ seed, colors, mask: 'none', background: '#334455' });
       const background = svg.match(/<rect width="100" height="100" fill="([^"]+)"/)[1];
+      assert.equal(background, '#334455');
       const eyeFills = [...svg.matchAll(/<(?:circle|ellipse)[^>]*fill="([^"]+)"/g)].map((m) => m[1]);
       const eyeStrokes = [...svg.matchAll(/stroke="([^"]+)"/g)].map((m) => m[1]);
       for (const color of [...eyeFills, ...eyeStrokes]) {
@@ -304,7 +305,8 @@ describe('palette', () => {
 
   it('only paints with colors from a custom palette', () => {
     const colors = ['#0a0a0a', '#fafafa', '#737373', '#d4d4d4'];
-    const allowed = new Set([...colors, 'none']);
+    // The eye colour is the anchor, which for a custom palette is black or white.
+    const allowed = new Set([...colors, 'none', '#ffffff', '#000000']);
     for (const variant of ['organic', 'geometric', 'pixel']) {
       for (const multicolor of [false, true]) {
         const svg = morphatar({ seed: 'custom', variant, colors, complexity: 9, multicolor });
@@ -320,11 +322,26 @@ describe('palette', () => {
     }
   });
 
-  it('still renders with a single custom color', () => {
-    const { background, foreground } = createPalette(createRandom('mono'), ['#000000']);
-    assert.equal(background, '#000000');
-    assert.equal(foreground.length, 1);
+  it('uses every custom color for shapes and anchors against black or white', () => {
+    const { background, foreground } = createPalette(createRandom('mono'), {
+      colors: ['#000000'],
+    });
+    assert.equal(background, '#ffffff');
+    assert.deepEqual(foreground, ['#000000']);
     assert.ok(contrastRatio(foreground[0], background) >= MIN_CONTRAST);
+
+    // Nothing is held back as a background any more.
+    const colors = ['#0a0a0a', '#737373', '#d4d4d4'];
+    const palette = createPalette(createRandom('all'), { colors });
+    assert.deepEqual(palette.foreground.slice().sort(), colors.slice().sort());
+  });
+
+  it('anchors against a caller-supplied background', () => {
+    const palette = createPalette(createRandom('anchored'), { background: '#123456' });
+    assert.equal(palette.background, '#123456');
+    for (const color of palette.foreground) {
+      assert.ok(contrastRatio(color, '#123456') >= MIN_CONTRAST, color);
+    }
   });
 
   it('ignores an empty custom palette and falls back to generation', () => {
@@ -357,7 +374,7 @@ describe('multicolor', () => {
     for (const variant of ['geometric', 'pixel']) {
       for (const seed of SEEDS) {
         const svg = morphatar({ seed, variant, complexity: 10, mask: 'none' });
-        const background = paletteOf(seed).background;
+        const background = morphatarPalette({ seed }).background;
         const shapeFills = new Set(fillsOf(svg).filter((fill) => fill !== background));
         assert.ok(shapeFills.size <= 1, `${variant}/"${seed}" used ${shapeFills.size} colors`);
       }
@@ -422,5 +439,73 @@ describe('multicolor', () => {
         (svg.match(/<ellipse (?![^>]*transform)/g) || []).length;
       assert.equal(eyes, 2, `seed "${seed}" drew ${eyes} eyes`);
     }
+  });
+});
+
+describe('background', () => {
+  const rect = /<rect width="100" height="100" fill="([^"]+)"\/>/;
+
+  it('leaves organic transparent by default', () => {
+    for (const seed of SEEDS) {
+      assert.ok(!rect.test(morphatar({ seed })), `seed "${seed}" painted a background`);
+    }
+  });
+
+  it('still paints the grid variants, whose empty cells are negative space', () => {
+    for (const variant of ['geometric', 'pixel']) {
+      for (const seed of SEEDS) {
+        const svg = morphatar({ seed, variant });
+        assert.equal(svg.match(rect)[1], morphatarPalette({ seed }).background, `${variant}/${seed}`);
+      }
+    }
+  });
+
+  it('paints whatever the caller passes, on every variant', () => {
+    for (const variant of ['organic', 'geometric', 'pixel']) {
+      const svg = morphatar({ seed: 'bg', variant, background: '#123456' });
+      assert.equal(svg.match(rect)[1], '#123456', variant);
+    }
+  });
+
+  it('treats transparent and none as an explicit request for nothing', () => {
+    for (const variant of ['organic', 'geometric', 'pixel']) {
+      for (const value of ['transparent', 'none', ' TRANSPARENT ', '']) {
+        const svg = morphatar({ seed: 'bg', variant, background: value });
+        assert.ok(!rect.test(svg), `${variant} painted a background for "${value}"`);
+      }
+    }
+  });
+
+  it('re-derives generated foregrounds against the given background', () => {
+    for (let i = 0; i < 120; i++) {
+      const background = i % 2 ? '#f4f4f5' : '#18181b';
+      const palette = morphatarPalette({ seed: `bg-${i}`, background });
+      assert.equal(palette.background, background);
+      for (const color of palette.foreground) {
+        const ratio = contrastRatio(color, background);
+        assert.ok(ratio >= MIN_CONTRAST - 1e-9, `${color} on ${background} is ${ratio.toFixed(2)}`);
+      }
+    }
+  });
+
+  it('does not reshuffle the shapes when a background is added', () => {
+    // The generated background is still drawn from the stream even when
+    // overridden, so geometry stays put.
+    const strip = (svg) => svg.replace(/<rect width="100" height="100" fill="[^"]+"\/>/, '');
+    const shapes = (svg) => strip(svg).match(/<(?:path|rect|circle|ellipse|g)[^>]*>/g).length;
+    const plain = morphatar({ seed: 'stable', variant: 'geometric' });
+    const painted = morphatar({ seed: 'stable', variant: 'geometric', background: '#ff0000' });
+    assert.equal(shapes(painted), shapes(plain));
+  });
+
+  it('escapes a hostile background value', () => {
+    const svg = morphatar({ seed: 'x', background: '#fff" onload="alert(1)' });
+    assert.ok(!svg.includes('onload="alert(1)"'));
+    assert.ok(svg.includes('&quot;'));
+  });
+
+  it('escapes hostile palette entries', () => {
+    const svg = morphatar({ seed: 'x', colors: ['#fff" onload="alert(1)', '#000'] });
+    assert.ok(!svg.includes('onload="alert(1)"'));
   });
 });

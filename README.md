@@ -6,7 +6,7 @@ One seed in, the same SVG out — on every machine, in every runtime, forever.
 No `Math.random()`, no canvas, no network, no images to host.
 
 ```
-5.9 KB gzipped · 0 runtime dependencies · 3 shape variants · 6 expressions
+6.1 KB gzipped · 0 runtime dependencies · 3 shape variants · 6 expressions
 ```
 
 ## Packages
@@ -49,6 +49,7 @@ interface MorphatarProps {
   seed: string;                                       // the deterministic seed
   variant?: 'organic' | 'geometric' | 'pixel';        // default: 'organic'
   colors?: string[];                                  // hex / rgb() / hsl()
+  background?: string;                                // default: per variant
   mask?: 'circle' | 'squircle' | 'hexagon' | 'none';  // default: 'squircle'
   complexity?: number;                                // 1–10, default: 5
   multicolor?: boolean;                               // default: false
@@ -68,9 +69,41 @@ colors without rendering), plus the building blocks — `fnv1a`, `sfc32`,
 `renderPixel`, each taking a `RenderContext` and returning a `Drawing`
 (`{ defs, layers }`).
 
+### Background
+
+Organic renders on **transparency** by default — it is a floating blob, so it
+drops onto whatever is behind it. Geometric and pixel still paint a background,
+because their empty cells are negative space rather than absence; an identicon
+without one is a scatter of loose squares.
+
+```tsx
+<Morphatar seed="ada" />                             // transparent blob
+<Morphatar seed="ada" background="#09090b" />        // painted
+<Morphatar seed="ada" variant="pixel" background="transparent" />  // force it off
+```
+
+`background` accepts any CSS colour, and `'transparent'` / `'none'` / `''` all
+mean "paint nothing" on any variant. Whatever you pass also becomes the
+palette's **contrast anchor**: generated foregrounds are re-derived to clear
+4.5:1 against *it*, and the eyes are painted in it. Adding a background never
+reshuffles the geometry — the generated tone is still drawn from the PRNG
+stream even when you override it.
+
+Two consequences of transparency worth knowing:
+
+- **The mask stops showing for organic.** The blob floats with a margin, so
+  `circle` / `squircle` / `hexagon` have nothing to clip until a background is
+  painted. The blob's own outline is the silhouette.
+- **The contrast guarantee is against the anchor, not your page.** With no
+  background the library cannot know what is behind the avatar, so a dark blob
+  can land on a dark page. Pass `background` — or pass your page's colour as the
+  anchor — when legibility against a specific surface matters.
+
 ### Colour modes
 
 Avatars are **single-colour by default**: one foreground for the whole shape.
+Every entry in `colors` is a shape colour — the background is set only by
+`background`, never taken out of the palette.
 `multicolor` opts into the full palette, and each variant blends it differently:
 
 | Variant | `multicolor: false` | `multicolor: true` |
@@ -98,6 +131,8 @@ still blends instead of blotting.
   when you want a real accessible name.
 - **Ids are content-derived**, so two avatars on one page never collide and
   server and client render byte-identical markup.
+- **Caller-supplied colours are escaped** before they reach an attribute value,
+  so a hostile `colors` entry or `background` cannot break out of the markup.
 - **Motion respects `prefers-reduced-motion`** — animated variants disable
   themselves automatically.
 
@@ -110,7 +145,8 @@ still blends instead of blotting.
 3. **Colour** — the palette is drawn *first*, from the seed alone. That is why
    switching `variant` or nudging `complexity` restyles the geometry without
    changing an avatar's colors. Generated foregrounds target distinct lightness
-   levels and are pushed until each clears **4.5:1** against the background.
+   levels and are pushed until each clears **4.5:1** against the contrast
+   anchor — the `background` you passed, or a derived tone.
 4. **Draw** — the same stream feeds one of three generators:
    - **organic** — a single blob: 5–10 anchor points laid out in polar
      coordinates, radii pushed and pulled by the PRNG, joined with a *closed*
@@ -143,7 +179,9 @@ The test suite is the contract: it pins the FNV-1a reference vectors, asserts
 byte-identical output across renders, verifies the pixel grid really is
 mirrored, checks that organic draws exactly one blob and one pair of eyes,
 that single-colour mode never leaks a second colour, that a custom palette is
-never escaped, and sweeps 300 seeds for the contrast floor.
+never escaped and a hostile one never breaks out of an attribute, that adding a
+background does not reshuffle the geometry, and sweeps 300 seeds for the
+contrast floor.
 
 ## Licence
 
