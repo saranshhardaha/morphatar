@@ -8,9 +8,11 @@
  * including across the seam.
  *
  * A single blob, not a stack: overlapping shapes read as mud at avatar sizes.
- * When `multicolor` is on, the palette is merged into one linear gradient
- * instead of being split across separate layers.
+ * When `multicolor` is on, the palette is blended as a soft colour field —
+ * heavily blurred spots over a base fill, clipped back to the blob — rather
+ * than a linear gradient, which always reads as a hard directional axis.
  */
+import { contrastRatio } from './colors.js';
 import { renderEyes } from './face.js';
 import type { Rand } from './prng.js';
 import { randInt, shuffle } from './prng.js';
@@ -58,24 +60,73 @@ export function blobPath(
 }
 
 /**
- * A linear gradient across the palette at a seed-chosen angle, expressed in
- * objectBoundingBox units so it follows the blob rather than the viewBox.
+ * A soft colour field: an opaque base fill with one heavily blurred ellipse per
+ * remaining palette colour floated over it.
+ *
+ * The blur is what softens the blend — the colours diffuse into each other with
+ * no seam and no directional axis — and clipping the whole field back to the
+ * blob path is what stops the blur from bleeding a fuzzy halo past the outline.
+ * The base fill must be opaque and cover the blob, since the blurred spots
+ * fade to transparent at their edges.
  */
-function gradient(rand: Rand, palette: Palette, id: string): string {
-  const stops = shuffle(rand, palette.foreground).slice(0, 3);
-  const angle = rand() * Math.PI * 2;
-  const dx = Math.cos(angle) * 0.5;
-  const dy = Math.sin(angle) * 0.5;
-  const markup = stops
+function colorField(
+  rand: Rand,
+  palette: Palette,
+  ids: { clip: string; filter: string },
+  blob: string,
+  cx: number,
+  cy: number,
+  radius: number,
+): { defs: string; markup: string } {
+  // The most legible colour against the avatar background becomes the body;
+  // the rest are blurred over it *at partial opacity*, so they tint the base
+  // rather than replace it. That is what keeps the blend soft even when a
+  // custom palette mixes a near-black with a near-white: a fully opaque spot
+  // of either extreme blots the middle of the blob. Placement is shuffled, so
+  // the composition still varies per seed.
+  const ranked = palette.foreground
+    .slice()
+    .sort((a, b) => contrastRatio(b, palette.background) - contrastRatio(a, palette.background));
+  const base = ranked[0];
+  const spots = shuffle(rand, ranked.slice(1));
+
+  // A blur wide enough to melt the spots together, scaled to the blob.
+  const blur = radius * (0.26 + rand() * 0.14);
+
+  const markup = spots
     .map((color, i) => {
-      const offset = stops.length === 1 ? 0 : i / (stops.length - 1);
-      return `<stop offset="${n(offset * 100)}%" stop-color="${color}"/>`;
+      // Spread the spots around the centre so no two stack up.
+      const angle = ((i + rand() * 0.6) / Math.max(spots.length, 1)) * Math.PI * 2;
+      const distance = radius * (0.3 + rand() * 0.35);
+      const rx = radius * (0.72 + rand() * 0.45);
+      const ry = rx * (0.7 + rand() * 0.55);
+      const x = cx + Math.cos(angle) * distance;
+      const y = cy + Math.sin(angle) * distance;
+      const rotation = rand() * 180;
+      const opacity = 0.45 + rand() * 0.3;
+      return (
+        `<ellipse cx="${n(x)}" cy="${n(y)}" rx="${n(rx)}" ry="${n(ry)}"` +
+        ` transform="rotate(${n(rotation)} ${n(x)} ${n(y)})"` +
+        ` fill="${color}" fill-opacity="${n(opacity)}"/>`
+      );
     })
     .join('');
-  return (
-    `<linearGradient id="${id}" x1="${n(0.5 - dx)}" y1="${n(0.5 - dy)}"` +
-    ` x2="${n(0.5 + dx)}" y2="${n(0.5 + dy)}">${markup}</linearGradient>`
-  );
+
+  if (!markup) return { defs: '', markup: `<path d="${blob}" fill="${base}"/>` };
+
+  const defs =
+    `<clipPath id="${ids.clip}"><path d="${blob}"/></clipPath>` +
+    // A generous filter region: the default (-10%/120%) would crop the blur.
+    // sRGB interpolation keeps the blend matching the flat colours.
+    `<filter id="${ids.filter}" x="-50%" y="-50%" width="200%" height="200%"` +
+    ` color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation="${n(blur)}"/></filter>`;
+
+  return {
+    defs,
+    markup:
+      `<g clip-path="url(#${ids.clip})"><path d="${blob}" fill="${base}"/>` +
+      `<g filter="url(#${ids.filter})">${markup}</g></g>`,
+  };
 }
 
 export function renderOrganic({
@@ -95,16 +146,20 @@ export function renderOrganic({
   const cy = 48 + rand() * 4;
   const radius = 32 + rand() * 6;
 
-  const gradientId = `${uid}g`;
-  const defs = multicolor ? gradient(rand, palette, gradientId) : '';
-  const fill = multicolor
-    ? `url(#${gradientId})`
-    : palette.foreground[randInt(rand, 0, palette.foreground.length - 1)];
+  const path = blobPath(rand, cx, cy, radius, anchors, jitter);
 
-  const blob = `<path d="${blobPath(rand, cx, cy, radius, anchors, jitter)}" fill="${fill}"/>`;
+  const field = multicolor
+    ? colorField(rand, palette, { clip: `${uid}b`, filter: `${uid}f` }, path, cx, cy, radius)
+    : {
+        defs: '',
+        markup: `<path d="${path}" fill="${
+          palette.foreground[randInt(rand, 0, palette.foreground.length - 1)]
+        }"/>`,
+      };
+
   const eyes = renderEyes(rand, palette.background, cx, cy);
 
   // Blob and eyes ship as one layer so `morph` moves the whole face together
   // instead of drifting the eyes off it.
-  return { defs, layers: [blob + eyes] };
+  return { defs: field.defs, layers: [field.markup + eyes] };
 }

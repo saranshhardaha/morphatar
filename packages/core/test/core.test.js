@@ -377,20 +377,50 @@ describe('multicolor', () => {
     );
   });
 
-  it('merges organic colors into one scoped gradient instead of layering them', () => {
+  it('blends organic colors as a blurred field clipped to the blob', () => {
     const flat = morphatar({ seed: 'grad' });
-    assert.ok(!flat.includes('linearGradient'));
+    assert.ok(!flat.includes('feGaussianBlur'));
+    assert.ok(!flat.includes('<filter'));
 
-    const blended = morphatar({ seed: 'grad', multicolor: true });
-    const id = blended.match(/<linearGradient id="([^"]+)"/)[1];
-    assert.ok(blended.includes(`fill="url(#${id})"`));
-    // One blob, one gradient — never a stack of overlapping shapes.
-    assert.equal(blended.split('<linearGradient').length - 1, 1);
-    assert.ok(blended.match(/<stop /g).length >= 2);
+    const blended = morphatar({ seed: 'grad', multicolor: true, mask: 'none' });
+    const filterId = blended.match(/<filter id="([^"]+)"/)[1];
+    const clipId = blended.match(/<clipPath id="([^"]+)"/)[1];
+
+    // The blurred spots are cut back to the blob, so no halo escapes it.
+    const field = blended.match(
+      new RegExp(`<g clip-path="url\\(#${clipId}\\)">.*?<g filter="url\\(#${filterId}\\)">`),
+    );
+    assert.ok(field, 'blurred group is not inside the blob clip');
+
+    // An opaque base under the spots: they fade out at their own edges.
+    const clipPath = blended.match(/<clipPath id="[^"]+"><path d="([^"]+)"\/><\/clipPath>/)[1];
+    assert.ok(blended.includes(`<path d="${clipPath}" fill="#`), 'no opaque base fill');
+
+    assert.ok(blended.includes('color-interpolation-filters="sRGB"'));
+    // A filter region wide enough that the blur is not cropped.
+    assert.ok(/<filter[^>]*width="200%"/.test(blended));
+    assert.ok(Number(blended.match(/stdDeviation="([\d.]+)"/)[1]) > 4);
+
+    // One blob, one field — never a stack of overlapping shapes.
+    assert.equal(blended.split('<filter').length - 1, 1);
+    assert.equal(blended.split(/<path d="M[^"]+Z"/).length - 1, 2); // clip def + base
+
     // Scoped per configuration, so two avatars can share a page.
     assert.notEqual(
-      id,
-      morphatar({ seed: 'grad-2', multicolor: true }).match(/<linearGradient id="([^"]+)"/)[1],
+      filterId,
+      morphatar({ seed: 'grad-2', multicolor: true }).match(/<filter id="([^"]+)"/)[1],
     );
+  });
+
+  it('still draws two eyes over a multicolor field', () => {
+    for (const seed of SEEDS) {
+      const svg = morphatar({ seed, multicolor: true, mask: 'none' });
+      const eyes =
+        (svg.match(/<circle cx=/g) || []).length +
+        (svg.match(/stroke-linecap="round"/g) || []).length +
+        // Eye ellipses carry no rotate(); the blurred colour spots do.
+        (svg.match(/<ellipse (?![^>]*transform)/g) || []).length;
+      assert.equal(eyes, 2, `seed "${seed}" drew ${eyes} eyes`);
+    }
   });
 });
