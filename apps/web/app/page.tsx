@@ -72,7 +72,7 @@ export default function Home() {
 
         <dl className="grid max-w-3xl grid-cols-2 gap-px border border-line bg-line sm:grid-cols-4">
           {[
-            ['5.6 KB', 'core, gzipped'],
+            ['5.9 KB', 'core, gzipped'],
             ['0', 'dependencies'],
             ['6', 'expressions'],
             ['100%', 'deterministic'],

@@ -6,7 +6,7 @@ One seed in, the same SVG out — on every machine, in every runtime, forever.
 No `Math.random()`, no canvas, no network, no images to host.
 
 ```
-5.6 KB gzipped · 0 runtime dependencies · 3 shape variants · 6 expressions
+5.9 KB gzipped · 0 runtime dependencies · 3 shape variants · 6 expressions
 ```
 
 ## Packages
@@ -75,13 +75,21 @@ Avatars are **single-colour by default**: one foreground for the whole shape.
 
 | Variant | `multicolor: false` | `multicolor: true` |
 | --- | --- | --- |
-| organic | one flat foreground | the palette merged into a single `<linearGradient>` at a seed-chosen angle |
+| organic | one flat foreground | a soft colour field: blurred spots over a base fill, clipped to the blob |
 | geometric | every cell shares one colour | each cell picks its own |
 | pixel | every pixel shares one colour | each pixel picks its own |
 
 The organic blob is always **one** closed path, never a stack — overlapping
 shapes read as mud at avatar sizes, so multiple colours are merged into the fill
 rather than split across layers.
+
+The multicolor field is a mesh-gradient, not a linear one: the most legible
+foreground fills the blob, the remaining colours float over it as heavily
+blurred ellipses at partial opacity, and the whole group is clipped back to the
+blob path. The blur is what makes the blend soft — no seam, no directional axis
+— and the clip is what stops it bleeding a fuzzy halo past the outline. Spots
+tint rather than replace, so a palette that mixes a near-black with a near-white
+still blends instead of blotting.
 
 ### Notes
 
