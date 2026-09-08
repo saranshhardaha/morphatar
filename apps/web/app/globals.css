@@ -1,0 +1,52 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    @apply bg-ink text-chalk antialiased;
+  }
+
+  ::selection {
+    @apply bg-chalk text-ink;
+  }
+
+  *:focus-visible {
+    @apply outline-none ring-2 ring-chalk ring-offset-2 ring-offset-ink;
+  }
+}
+
+@layer components {
+  /* Monochrome range input — square thumb, hairline track. */
+  .slider {
+    @apply h-1 w-full cursor-pointer appearance-none rounded-none bg-line;
+  }
+
+  .slider::-webkit-slider-thumb {
+    @apply h-4 w-4 appearance-none border border-chalk bg-chalk;
+    transition: transform 120ms ease;
+  }
+
+  .slider:active::-webkit-slider-thumb {
+    transform: scale(1.15);
+  }
+
+  .slider::-moz-range-thumb {
+    @apply h-4 w-4 rounded-none border border-chalk bg-chalk;
+  }
+
+  .grid-lines {
+    background-image:
+      linear-gradient(to right, rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+}
