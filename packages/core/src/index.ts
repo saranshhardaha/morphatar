@@ -84,6 +84,12 @@ function normalizeBackground(value: string | undefined): string | null {
   return escapeXml(trimmed);
 }
 
+/** Clamp to 1–10; a non-numeric value (NaN from an empty input, say) falls back to the default. */
+function resolveComplexity(value: number | undefined): number {
+  const rounded = Math.round(Number(value ?? DEFAULTS.complexity));
+  return Number.isNaN(rounded) ? DEFAULTS.complexity : clamp(rounded, 1, 10);
+}
+
 function resolve(options: MorphatarOptions): ResolvedOptions {
   return {
     seed: String(options.seed ?? ''),
@@ -92,11 +98,11 @@ function resolve(options: MorphatarOptions): ResolvedOptions {
     background: normalizeBackground(options.background),
     backgroundGiven: options.background !== undefined,
     animation: options.animation ?? DEFAULTS.animation,
-    complexity: clamp(Math.round(options.complexity ?? DEFAULTS.complexity), 1, 10),
+    complexity: resolveComplexity(options.complexity),
     multicolor: options.multicolor ?? DEFAULTS.multicolor,
     size: options.size ?? DEFAULTS.size,
     title: options.title ?? DEFAULTS.title,
-    colors: options.colors && options.colors.length > 0 ? options.colors : undefined,
+    colors: Array.isArray(options.colors) && options.colors.length > 0 ? options.colors : undefined,
   };
 }
 

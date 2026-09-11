@@ -13,8 +13,8 @@ No `Math.random()`, no canvas, no network, no images to host.
 
 | Package | What it is |
 | --- | --- |
-| `@morphatar/core` | Pure TypeScript engine. Takes options, returns a raw `<svg>` string. |
-| `@morphatar/react` | ~40-line React wrapper around the core, memoised with `useMemo`. |
+| [`@morphatar/core`](packages/core#readme) | Pure TypeScript engine. Takes options, returns a raw `<svg>` string. |
+| [`@morphatar/react`](packages/react#readme) | ~40-line React wrapper around the core, memoised with `useMemo`. |
 | `apps/web` | Next.js 14 playground for exploring the parameter space. |
 
 ## Install
@@ -182,6 +182,12 @@ that single-colour mode never leaks a second colour, that a custom palette is
 never escaped and a hostile one never breaks out of an attribute, that adding a
 background does not reshuffle the geometry, and sweeps 300 seeds for the
 contrast floor.
+
+## Publishing
+
+Releases go to npm with `pnpm` (never plain `npm publish`, which would ship the
+`workspace:*` dependency literally). Run `pnpm release:check` for a full dry
+run, then see [PUBLISHING.md](PUBLISHING.md) for the step-by-step guide.
 
 ## Licence
 

@@ -11,7 +11,9 @@
     "dev": "pnpm build && pnpm --filter @morphatar/web dev",
     "test": "pnpm --filter @morphatar/core test",
     "typecheck": "pnpm -r typecheck",
-    "size": "node scripts/size.mjs"
+    "size": "node scripts/size.mjs",
+    "release:check": "pnpm build && pnpm typecheck && pnpm test && pnpm size && pnpm -r publish --dry-run --no-git-checks",
+    "release": "pnpm -r publish"
   },
   "devDependencies": {
     "typescript": "^5.6.3"

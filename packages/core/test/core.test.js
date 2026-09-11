@@ -192,6 +192,14 @@ describe('morphatar markup', () => {
     assert.equal(morphatar({ seed: 'c', complexity: 99 }), morphatar({ seed: 'c', complexity: 10 }));
   });
 
+  it('falls back to the default complexity for non-numeric input', () => {
+    assert.equal(morphatar({ seed: 'c', complexity: NaN }), morphatar({ seed: 'c' }));
+  });
+
+  it('ignores a colors value that is not an array', () => {
+    assert.equal(morphatar({ seed: 'c', colors: '#ff0000' }), morphatar({ seed: 'c' }));
+  });
+
   it('stays comfortably small', () => {
     for (const variant of ['organic', 'geometric', 'pixel']) {
       const svg = morphatar({ seed: 'size-budget', variant, complexity: 10 });

@@ -37,16 +37,17 @@ export function Morphatar({
   style,
   ...rest
 }: MorphatarProps) {
-  // Colors is an array; join it so a fresh literal on every render is not a
-  // cache miss.
-  const colorKey = colors ? colors.join(',') : '';
+  // Colors is an array; serialise it so a fresh literal on every render is not a
+  // cache miss. JSON rather than join(','), since rgb() / hsl() values contain
+  // commas of their own.
+  const colorKey = colors ? JSON.stringify(colors) : '';
 
   const html = useMemo(
     () =>
       morphatar({
         seed,
         variant,
-        colors: colorKey ? colorKey.split(',') : undefined,
+        colors: colorKey ? (JSON.parse(colorKey) as string[]) : undefined,
         background,
         mask,
         complexity,

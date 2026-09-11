@@ -5,3 +5,6 @@ out/
 *.tsbuildinfo
 .DS_Store
 .env*.local
+.claude/
+CLAUDE.md
+CLAUDE.local.md

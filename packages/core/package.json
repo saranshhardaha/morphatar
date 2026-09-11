@@ -3,6 +3,22 @@
   "version": "0.1.0",
   "description": "Deterministic algorithmic avatar generator. Zero dependencies, raw SVG output.",
   "license": "MIT",
+  "author": "Saransh Hardaha",
+  "homepage": "https://github.com/saranshhardaha/morphatar/tree/main/packages/core#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/saranshhardaha/morphatar.git",
+    "directory": "packages/core"
+  },
+  "bugs": {
+    "url": "https://github.com/saranshhardaha/morphatar/issues"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "type": "module",
   "sideEffects": false,
   "main": "./dist/index.js",
@@ -15,11 +31,12 @@
     },
     "./package.json": "./package.json"
   },
-  "files": ["dist"],
+  "files": ["dist", "src"],
   "keywords": ["avatar", "identicon", "svg", "deterministic", "generative", "boring-avatars"],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "pnpm build && node --test test/*.test.js"
+    "test": "pnpm build && node --test test/*.test.js",
+    "prepublishOnly": "pnpm test"
   }
 }
