@@ -1,15 +1,7 @@
 import { morphatarPalette } from '@morphatar/core';
 import { Morphatar } from '@morphatar/react';
 import { Playground } from '@/components/Playground';
-import { CodeBlock } from '@/components/CodeBlock';
-import type { CodeProp } from '@/components/CodeBlock';
-
-/** The hero snippet: the shortest thing worth copying, plus the new eye motion. */
-const HERO_CODE: CodeProp[] = [
-  { name: 'seed', literal: '"ada@lovelace.dev"', kind: 'string' },
-  { name: 'animation', literal: '"blink"', kind: 'string' },
-  { name: 'size', literal: '{64}', kind: 'expr' },
-];
+import { Hero } from '@/components/Hero';
 
 const MARQUEE_SEEDS = [
   'morphatar',
@@ -51,7 +43,7 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="max-w-3xl space-y-6">
+        <Hero>
           <h1 className="text-4xl font-medium leading-[1.05] tracking-tight text-chalk sm:text-6xl">
             One seed in.
             <br />
@@ -63,27 +55,7 @@ export default function Home() {
             just a hash, a counter-based PRNG and a string of SVG. Every organic blob is a single
             closed spline with an expression the seed picked for it.
           </p>
-
-          <div className="max-w-md">
-            <CodeBlock props={HERO_CODE} />
-          </div>
-        </div>
-
-        <dl className="grid max-w-3xl grid-cols-2 gap-px border border-line bg-line sm:grid-cols-4">
-          {[
-            ['6.0 KB', 'core, gzipped'],
-            ['0', 'dependencies'],
-            ['6', 'expressions'],
-            ['100%', 'deterministic'],
-          ].map(([value, label]) => (
-            <div key={label} className="bg-ink px-4 py-5">
-              <dt className="font-mono text-xl text-chalk">{value}</dt>
-              <dd className="mt-1 font-mono text-[10px] uppercase tracking-[0.16em] text-muted">
-                {label}
-              </dd>
-            </div>
-          ))}
-        </dl>
+        </Hero>
       </header>
 
       <Playground />
