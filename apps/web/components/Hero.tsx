@@ -50,7 +50,10 @@ export function Hero({ children }: { children: React.ReactNode }) {
       <div className="max-w-2xl space-y-6">
         {children}
 
-        <CodeBlock props={code} />
+        <CodeBlock
+          props={code}
+          editable={{ name: 'seed', value: seed, onChange: setSeed }}
+        />
 
         <a
           href="https://www.npmjs.com/package/@morphatar/react"

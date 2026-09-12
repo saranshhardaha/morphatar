@@ -34,7 +34,17 @@ function useCopy(): [boolean, (text: string) => void] {
  * structure instead of hue, so the code block stays part of the black-and-white
  * design while remaining readable.
  */
-export function CodeBlock({ props }: { props: CodeProp[] }) {
+export function CodeBlock({
+  props,
+  editable,
+}: {
+  props: CodeProp[];
+  /**
+   * Turns one string prop's value into an inline input, so the snippet is the
+   * control rather than just a description of one.
+   */
+  editable?: { name: string; value: string; onChange: (value: string) => void };
+}) {
   const [copied, copy] = useCopy();
 
   const source = [
@@ -75,17 +85,37 @@ export function CodeBlock({ props }: { props: CodeProp[] }) {
               {'\n  '}
               <span className="text-soft">{prop.name}</span>
               <span className="text-muted">=</span>
-              <span className={prop.kind === 'string' ? 'text-chalk' : 'text-muted'}>
-                {prop.kind === 'string' ? (
-                  prop.literal
-                ) : (
-                  <>
-                    {'{'}
-                    <span className="text-chalk">{prop.literal.slice(1, -1)}</span>
-                    {'}'}
-                  </>
-                )}
-              </span>
+              {editable && editable.name === prop.name && prop.kind === 'string' ? (
+                <span className="text-chalk">
+                  &quot;
+                  <input
+                    value={editable.value}
+                    onChange={(event) => editable.onChange(event.target.value)}
+                    // Grows with its content, so the literal keeps looking like
+                    // code instead of sitting in a fixed-width box. `ch` is
+                    // exact in a monospace face, where `size` leaves a sliver
+                    // of padding before the closing quote.
+                    style={{ width: `${Math.max(editable.value.length, 1)}ch` }}
+                    spellCheck={false}
+                    autoComplete="off"
+                    aria-label={`${prop.name} value`}
+                    className="inline-block bg-transparent p-0 font-mono text-[11.5px] text-chalk underline decoration-muted decoration-dotted underline-offset-4 outline-none focus:decoration-chalk"
+                  />
+                  &quot;
+                </span>
+              ) : (
+                <span className={prop.kind === 'string' ? 'text-chalk' : 'text-muted'}>
+                  {prop.kind === 'string' ? (
+                    prop.literal
+                  ) : (
+                    <>
+                      {'{'}
+                      <span className="text-chalk">{prop.literal.slice(1, -1)}</span>
+                      {'}'}
+                    </>
+                  )}
+                </span>
+              )}
             </span>
           ))}
           {'\n'}
