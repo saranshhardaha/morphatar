@@ -37,11 +37,19 @@
   ],
   "keywords": [
     "avatar",
+    "avatar-generator",
+    "avatars",
     "identicon",
     "svg",
     "deterministic",
     "generative",
-    "boring-avatars"
+    "generative-art",
+    "procedural-generation",
+    "profile-picture",
+    "zero-dependencies",
+    "boring-avatars",
+    "blockies",
+    "jdenticon"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
