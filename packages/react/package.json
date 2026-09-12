@@ -1,6 +1,6 @@
 {
   "name": "@morphatar/react",
-  "version": "0.2.0",
+  "version": "0.1.1",
   "description": "React wrapper for Morphatar — deterministic algorithmic avatars.",
   "license": "MIT",
   "author": "Saransh Hardaha",
