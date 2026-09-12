@@ -88,9 +88,6 @@ export default function Home() {
       </section>
 
       <footer className="flex flex-col gap-4 px-6 py-12 lg:flex-row lg:items-center lg:justify-between lg:px-10">
-        <p className="font-mono text-[11px] text-muted">
-          Morphatar — MIT licensed. Built as app 01 of 12.
-        </p>
         <a
           href="https://www.npmjs.com/package/@morphatar/react"
           className="font-mono text-[11px] text-muted transition-colors hover:text-chalk"
