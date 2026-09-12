@@ -53,7 +53,7 @@ interface MorphatarProps {
   mask?: 'circle' | 'squircle' | 'hexagon' | 'none';  // default: 'squircle'
   complexity?: number;                                // 1–10, default: 5
   multicolor?: boolean;                               // default: false
-  animation?: 'none' | 'pulse' | 'morph' | 'spin';    // default: 'none'
+  animation?: 'none' | 'blink' | 'dart';              // organic only, default: 'none'
   size?: number | string;                             // default: '100%'
   title?: string;                                     // aria-label, default: 'Avatar'
 }

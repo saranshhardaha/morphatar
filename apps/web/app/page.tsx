@@ -1,28 +1,14 @@
 import { morphatarPalette } from '@morphatar/core';
 import { Morphatar } from '@morphatar/react';
 import { Playground } from '@/components/Playground';
+import { CodeBlock } from '@/components/CodeBlock';
+import type { CodeProp } from '@/components/CodeBlock';
 
-const PIPELINE = [
-  {
-    step: '01',
-    title: 'Hash',
-    body: 'FNV-1a folds the seed string into a single 32-bit integer. Same string, same integer, on every machine.',
-  },
-  {
-    step: '02',
-    title: 'Expand',
-    body: 'splitmix32 stretches that integer into 128 bits of sfc32 state — a fast counting PRNG with no global state.',
-  },
-  {
-    step: '03',
-    title: 'Colour',
-    body: 'A base hue is drawn, then shifted by 30° or 120° and pushed until every foreground clears 4.5:1 against the background. One colour by default; multicolor merges the palette into a gradient.',
-  },
-  {
-    step: '04',
-    title: 'Draw',
-    body: 'The same stream feeds one closed-spline blob and its expression, a Bauhaus grid, or a mirrored 5×5 identicon — assembled into a single SVG string, on transparency unless you ask for a background.',
-  },
+/** The hero snippet: the shortest thing worth copying, plus the new eye motion. */
+const HERO_CODE: CodeProp[] = [
+  { name: 'seed', literal: '"ada@lovelace.dev"', kind: 'string' },
+  { name: 'animation', literal: '"blink"', kind: 'string' },
+  { name: 'size', literal: '{64}', kind: 'expr' },
 ];
 
 const MARQUEE_SEEDS = [
@@ -49,12 +35,20 @@ export default function Home() {
             <Morphatar seed="morphatar" variant="organic" mask="squircle" background="#fafafa" size={44} />
             <span className="font-mono text-sm uppercase tracking-[0.4em] text-chalk">Morphatar</span>
           </div>
-          <a
-            href="https://github.com/saranshhardaha/morphatar"
-            className="border border-line px-3 py-2 font-mono text-[11px] lowercase text-soft transition-colors hover:border-soft hover:text-chalk"
-          >
-            github
-          </a>
+          <div className="flex gap-2">
+            <a
+              href="https://www.npmjs.com/package/@morphatar/react"
+              className="border border-line px-3 py-2 font-mono text-[11px] lowercase text-soft transition-colors hover:border-soft hover:text-chalk"
+            >
+              npm
+            </a>
+            <a
+              href="https://github.com/saranshhardaha/morphatar"
+              className="border border-line px-3 py-2 font-mono text-[11px] lowercase text-soft transition-colors hover:border-soft hover:text-chalk"
+            >
+              github
+            </a>
+          </div>
         </div>
 
         <div className="max-w-3xl space-y-6">
@@ -69,11 +63,15 @@ export default function Home() {
             just a hash, a counter-based PRNG and a string of SVG. Every organic blob is a single
             closed spline with an expression the seed picked for it.
           </p>
+
+          <div className="max-w-md">
+            <CodeBlock props={HERO_CODE} />
+          </div>
         </div>
 
         <dl className="grid max-w-3xl grid-cols-2 gap-px border border-line bg-line sm:grid-cols-4">
           {[
-            ['6.1 KB', 'core, gzipped'],
+            ['6.0 KB', 'core, gzipped'],
             ['0', 'dependencies'],
             ['6', 'expressions'],
             ['100%', 'deterministic'],
@@ -89,19 +87,6 @@ export default function Home() {
       </header>
 
       <Playground />
-
-      <section className="px-6 py-16 lg:px-10 lg:py-24">
-        <h2 className="font-mono text-[10px] uppercase tracking-[0.28em] text-muted">The engine</h2>
-        <div className="mt-8 grid gap-px border border-line bg-line md:grid-cols-2 xl:grid-cols-4">
-          {PIPELINE.map((item) => (
-            <article key={item.step} className="space-y-3 bg-ink p-6">
-              <span className="font-mono text-[11px] text-muted">{item.step}</span>
-              <h3 className="text-lg text-chalk">{item.title}</h3>
-              <p className="text-[13.5px] leading-relaxed text-soft">{item.body}</p>
-            </article>
-          ))}
-        </div>
-      </section>
 
       <section className="border-y border-line px-6 py-12 lg:px-10">
         <h2 className="font-mono text-[10px] uppercase tracking-[0.28em] text-muted">
@@ -134,9 +119,12 @@ export default function Home() {
         <p className="font-mono text-[11px] text-muted">
           Morphatar — MIT licensed. Built as app 01 of 12.
         </p>
-        <p className="font-mono text-[11px] text-muted">
+        <a
+          href="https://www.npmjs.com/package/@morphatar/react"
+          className="font-mono text-[11px] text-muted transition-colors hover:text-chalk"
+        >
           pnpm add @morphatar/react
-        </p>
+        </a>
       </footer>
     </main>
   );

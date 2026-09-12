@@ -64,7 +64,7 @@ The component renders a `<span>` wrapping the `<svg>`. Any `<span>` attribute
 ### Animation
 
 ```tsx
-<Morphatar seed="ada" animation="morph" />  {/* also: 'pulse', 'spin' */}
+<Morphatar seed="ada" animation="blink" />  {/* also: 'dart' */}
 ```
 
 Animations turn themselves off for users with `prefers-reduced-motion`.
@@ -82,7 +82,7 @@ All options from `@morphatar/core`, plus standard `<span>` attributes.
 | `mask` | `'circle' \| 'squircle' \| 'hexagon' \| 'none'` | `'squircle'` | Clip silhouette. |
 | `complexity` | `number` (1–10) | `5` | Node count / density. |
 | `multicolor` | `boolean` | `false` | Use the whole palette instead of one colour. |
-| `animation` | `'none' \| 'pulse' \| 'morph' \| 'spin'` | `'none'` | Idle motion. |
+| `animation` | `'none' \| 'blink' \| 'dart'` | `'none'` | Idle eye motion. `organic` only — the grids have no eyes. |
 | `size` | `number \| string` | `'100%'` | px number or CSS length. |
 | `title` | `string` | `'Avatar'` | Accessible name. The seed is never written into the markup. |
 

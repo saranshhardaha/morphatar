@@ -4,8 +4,13 @@ export type Variant = 'organic' | 'geometric' | 'pixel';
 /** Silhouette the avatar is clipped to. */
 export type Mask = 'circle' | 'squircle' | 'hexagon' | 'none';
 
-/** Optional idle motion baked into the SVG as CSS keyframes. */
-export type Animation = 'none' | 'pulse' | 'morph' | 'spin';
+/**
+ * Optional idle motion baked into the SVG as CSS keyframes.
+ *
+ * Both values move the *eyes* and nothing else, so they apply to the `organic`
+ * variant only — `geometric` and `pixel` have no eyes and ignore them.
+ */
+export type Animation = 'none' | 'blink' | 'dart';
 
 export interface MorphatarOptions {
   /** Deterministic seed: the same string always renders the same avatar. */
@@ -66,6 +71,11 @@ export interface RenderContext {
   multicolor: boolean;
   /** Instance id, for scoping any gradient or filter the generator defines. */
   uid: string;
+  /**
+   * The animation being rendered, so a generator can mark up the part that
+   * moves. Omitted means no motion.
+   */
+  animation?: Animation;
 }
 
 /** A generator's output: optional `<defs>` content plus animatable layers. */

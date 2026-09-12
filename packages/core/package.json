@@ -1,6 +1,6 @@
 {
   "name": "@morphatar/core",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Deterministic algorithmic avatar generator. Zero dependencies, raw SVG output.",
   "license": "MIT",
   "author": "Saransh Hardaha",
@@ -31,8 +31,18 @@
     },
     "./package.json": "./package.json"
   },
-  "files": ["dist", "src"],
-  "keywords": ["avatar", "identicon", "svg", "deterministic", "generative", "boring-avatars"],
+  "files": [
+    "dist",
+    "src"
+  ],
+  "keywords": [
+    "avatar",
+    "identicon",
+    "svg",
+    "deterministic",
+    "generative",
+    "boring-avatars"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",

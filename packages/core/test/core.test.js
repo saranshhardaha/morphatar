@@ -147,26 +147,44 @@ describe('morphatar markup', () => {
   });
 
   it('scopes animation ids per configuration', () => {
-    const a = morphatar({ seed: 'anim-a', animation: 'pulse' });
-    const b = morphatar({ seed: 'anim-b', animation: 'pulse' });
-    const idOf = (svg) => svg.match(/@keyframes (m[a-z0-9]+)p/)[1];
+    const a = morphatar({ seed: 'anim-a', animation: 'blink' });
+    const b = morphatar({ seed: 'anim-b', animation: 'blink' });
+    const idOf = (svg) => svg.match(/\.(m[a-z0-9]+e)\{/)[1];
     assert.notEqual(idOf(a), idOf(b));
     assert.ok(a.includes('prefers-reduced-motion'));
     assert.ok(!morphatar({ seed: 'anim-a' }).includes('@keyframes'));
   });
 
-  it('staggers morph across layers and wraps pulse/spin once', () => {
-    const morph = morphatar({ seed: 'motion', variant: 'geometric', animation: 'morph', complexity: 10 });
-    assert.ok(morph.includes('animation-delay:0s'));
-    assert.ok(morph.includes('animation-delay:0.4s'));
-    const spin = morphatar({ seed: 'motion', animation: 'spin' });
-    assert.equal(spin.split('class="').length - 1, 1);
+  it('animates the eyes and nothing else', () => {
+    for (const animation of ['blink', 'dart']) {
+      const svg = morphatar({ seed: 'motion', animation, mask: 'none' });
+      const cls = svg.match(/\.(m[a-z0-9]+e)\{/)[1];
+
+      // Exactly one group, wrapping the eyes — the blob path stays outside it.
+      assert.equal(svg.split('class="').length - 1, 1, animation);
+      assert.ok(svg.includes(`<g class="${cls}">`), animation);
+      assert.ok(/<path d="M[^"]+Z" fill="#[^"]+"\/><g class="/.test(svg), animation);
+
+      // Pivot on the eyes' own box, not the viewBox centre.
+      assert.ok(svg.includes('transform-box:fill-box'), animation);
+    }
   });
 
-  it('keeps an organic face on a single morph layer', () => {
-    // Blob and eyes must not drift apart, so organic ships exactly one layer.
-    const morph = morphatar({ seed: 'motion', animation: 'morph', complexity: 10 });
-    assert.equal(morph.split('animation-delay:').length - 1, 1);
+  it('leaves the grid variants unanimated', () => {
+    for (const variant of ['geometric', 'pixel']) {
+      for (const animation of ['blink', 'dart']) {
+        const svg = morphatar({ seed: 'grid-anim', variant, animation });
+        assert.ok(!svg.includes('@keyframes'), `${variant}/${animation}`);
+        assert.ok(!svg.includes('<style>'), `${variant}/${animation}`);
+        assert.ok(!svg.includes('class="'), `${variant}/${animation}`);
+      }
+    }
+  });
+
+  it('adds no markup at all to a still avatar', () => {
+    const svg = morphatar({ seed: 'still', mask: 'none' });
+    assert.ok(!svg.includes('class="'));
+    assert.ok(!svg.includes('<style>'));
   });
 
   it('honours numeric and string sizes', () => {

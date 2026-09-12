@@ -12,6 +12,7 @@
  * heavily blurred spots over a base fill, clipped back to the blob — rather
  * than a linear gradient, which always reads as a hard directional axis.
  */
+import { eyeClass, isEyeAnimation } from './animation.js';
 import { contrastRatio } from './colors.js';
 import { renderEyes } from './face.js';
 import type { Rand } from './prng.js';
@@ -135,6 +136,7 @@ export function renderOrganic({
   complexity,
   multicolor,
   uid,
+  animation,
 }: RenderContext): Drawing {
   // Complexity is node count: a near-circle at 1, a lobed blob at 10. The count
   // is driven mostly by complexity rather than sampled from a range, otherwise
@@ -159,7 +161,12 @@ export function renderOrganic({
 
   const eyes = renderEyes(rand, palette.background, cx, cy);
 
-  // Blob and eyes ship as one layer so `morph` moves the whole face together
-  // instead of drifting the eyes off it.
-  return { defs: field.defs, layers: [field.markup + eyes] };
+  // The eyes only get their own group when something animates them: a still
+  // avatar keeps the leaner markup it has always had.
+  const face =
+    animation && isEyeAnimation(animation)
+      ? `<g class="${eyeClass(uid)}">${eyes}</g>`
+      : eyes;
+
+  return { defs: field.defs, layers: [field.markup + face] };
 }

@@ -2,45 +2,42 @@
  * Idle motion, emitted as a `<style>` block scoped by the instance id so many
  * avatars can share a page without their keyframes colliding.
  *
- * `pulse` and `spin` drive one wrapper group; `morph` animates each shape layer
- * with a staggered delay, which is what makes the blobs look like they breathe.
+ * Both animations move the eyes and leave the blob still. Eyes are the part
+ * that reads as alive at avatar sizes; translating or scaling the whole shape
+ * at 24px just smears it. That also means motion belongs to the `organic`
+ * variant alone — the grids have no eyes to move.
  */
 import type { Animation } from './types.js';
 
-/** Class applied to the group wrapping every shape (pulse / spin). */
-export const rootClass = (uid: string): string => `${uid}r`;
-/** Class applied to each individual layer (morph). */
-export const layerClass = (uid: string): string => `${uid}s`;
+/** Class applied to the group wrapping the pair of eyes. */
+export const eyeClass = (uid: string): string => `${uid}e`;
 
-export function isPerLayer(animation: Animation): boolean {
-  return animation === 'morph';
+/** Whether this animation needs the eyes wrapped in their own group. */
+export function isEyeAnimation(animation: Animation): boolean {
+  return animation === 'blink' || animation === 'dart';
 }
 
 export function animationCss(animation: Animation, uid: string): string {
-  if (animation === 'none') return '';
+  if (!isEyeAnimation(animation)) return '';
 
-  const root = `.${rootClass(uid)}`;
-  const layer = `.${layerClass(uid)}`;
-  const origin = 'transform-origin:50% 50%;transform-box:view-box;';
+  const eyes = `.${eyeClass(uid)}`;
+  // fill-box pivots on the eyes' own bounding box, so a squash or a shift
+  // happens in place instead of swinging around the middle of the viewBox.
+  const origin = 'transform-origin:50% 50%;transform-box:fill-box;';
   let css = '';
 
-  if (animation === 'pulse') {
+  if (animation === 'blink') {
+    // Long open, brief close: a blink is ~150ms in a ~4s cycle, and anything
+    // slower reads as a wink or a doze.
     css =
-      `${root}{${origin}animation:${uid}p 3.2s ease-in-out infinite}` +
-      `@keyframes ${uid}p{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}`;
-  } else if (animation === 'spin') {
-    css =
-      `${root}{${origin}animation:${uid}n 22s linear infinite}` +
-      `@keyframes ${uid}n{from{transform:rotate(0)}to{transform:rotate(360deg)}}`;
+      `${eyes}{${origin}animation:${uid}b 4.4s ease-in-out infinite}` +
+      `@keyframes ${uid}b{0%,92%,100%{transform:scaleY(1)}96%{transform:scaleY(0.08)}}`;
   } else {
     css =
-      `${layer}{${origin}animation:${uid}m 7s ease-in-out infinite}` +
-      `@keyframes ${uid}m{` +
-      '0%,100%{transform:translate(0,0) scale(1)}' +
-      '33%{transform:translate(2px,-2.5px) scale(1.06)}' +
-      '66%{transform:translate(-2.5px,2px) scale(0.95)}}';
+      `${eyes}{${origin}animation:${uid}d 5.2s ease-in-out infinite}` +
+      `@keyframes ${uid}d{0%,62%,100%{transform:translateX(0)}` +
+      `72%{transform:translateX(1.6px)}86%{transform:translateX(-1.6px)}}`;
   }
 
-  const target = animation === 'morph' ? layer : root;
-  return css + `@media(prefers-reduced-motion:reduce){${target}{animation:none}}`;
+  return css + `@media(prefers-reduced-motion:reduce){${eyes}{animation:none}}`;
 }

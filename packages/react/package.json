@@ -1,6 +1,6 @@
 {
   "name": "@morphatar/react",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "React wrapper for Morphatar — deterministic algorithmic avatars.",
   "license": "MIT",
   "author": "Saransh Hardaha",
@@ -28,8 +28,18 @@
     },
     "./package.json": "./package.json"
   },
-  "files": ["dist", "src"],
-  "keywords": ["avatar", "identicon", "react", "react-component", "svg", "deterministic"],
+  "files": [
+    "dist",
+    "src"
+  ],
+  "keywords": [
+    "avatar",
+    "identicon",
+    "react",
+    "react-component",
+    "svg",
+    "deterministic"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",

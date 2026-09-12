@@ -93,7 +93,7 @@ morphatar(options: MorphatarOptions): string
 | `mask` | `'circle' \| 'squircle' \| 'hexagon' \| 'none'` | `'squircle'` | Clip silhouette. |
 | `complexity` | `number` (1–10) | `5` | Node count / density. Out-of-range values are clamped. |
 | `multicolor` | `boolean` | `false` | Paint with the whole palette instead of one foreground. |
-| `animation` | `'none' \| 'pulse' \| 'morph' \| 'spin'` | `'none'` | Idle motion, baked in as scoped CSS keyframes. |
+| `animation` | `'none' \| 'blink' \| 'dart'` | `'none'` | Idle eye motion, baked in as scoped CSS keyframes. `organic` only — the grids have no eyes. |
 | `size` | `number \| string` | `'100%'` | Width/height. Numbers are px; strings are any CSS length. |
 | `title` | `string` | `'Avatar'` | Accessible name (`aria-label`). The seed is never written into the markup. |
 

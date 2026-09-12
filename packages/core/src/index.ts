@@ -9,7 +9,7 @@
  * The same options always produce a byte-identical string: no `Math.random()`,
  * no `Date`, no counters, nothing environment-dependent.
  */
-import { animationCss, isPerLayer, layerClass, rootClass } from './animation.js';
+import { animationCss } from './animation.js';
 import { createPalette } from './colors.js';
 import { renderGeometric } from './geometric.js';
 import { maskShape } from './masks.js';
@@ -157,6 +157,7 @@ export function morphatar(options: MorphatarOptions): string {
     complexity: resolved.complexity,
     multicolor: resolved.multicolor,
     uid,
+    animation: resolved.animation,
   };
 
   const drawing: Drawing =
@@ -167,16 +168,11 @@ export function morphatar(options: MorphatarOptions): string {
         : renderOrganic(context);
 
   const clip = maskShape(resolved.mask);
-  const css = animationCss(resolved.animation, uid);
+  // Motion lives on the eyes, so only organic ever carries keyframes — the
+  // grids would otherwise ship CSS targeting a class nothing wears.
+  const css = resolved.variant === 'organic' ? animationCss(resolved.animation, uid) : '';
 
-  const body = isPerLayer(resolved.animation)
-    ? drawing.layers
-        .map(
-          (layer, i) =>
-            `<g class="${layerClass(uid)}" style="animation-delay:${n(i * 0.4)}s">${layer}</g>`,
-        )
-        .join('')
-    : drawing.layers.join('');
+  const body = drawing.layers.join('');
 
   // Organic is a floating blob, so it renders on transparency unless a
   // background is asked for. The grid variants paint one by default: their
@@ -187,13 +183,10 @@ export function morphatar(options: MorphatarOptions): string {
       ? null
       : palette.background;
 
-  // The background sits outside the animated group so `spin` never exposes a
-  // bare corner, and the clip group sits outside both so the mask holds still.
+  // Nothing wraps the whole drawing any more: only the eyes move, and they
+  // carry their own group from the generator.
   const painted =
-    (backgroundFill ? `<rect width="100" height="100" fill="${backgroundFill}"/>` : '') +
-    (resolved.animation === 'pulse' || resolved.animation === 'spin'
-      ? `<g class="${rootClass(uid)}">${body}</g>`
-      : body);
+    (backgroundFill ? `<rect width="100" height="100" fill="${backgroundFill}"/>` : '') + body;
 
   const defs = (clip ? `<clipPath id="${uid}c">${clip}</clipPath>` : '') + drawing.defs;
   const content =

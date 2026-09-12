@@ -24,9 +24,8 @@ const MASKS: readonly { value: Mask; label: string }[] = [
 
 const ANIMATIONS: readonly { value: Animation; label: string }[] = [
   { value: 'none', label: 'none' },
-  { value: 'pulse', label: 'pulse' },
-  { value: 'morph', label: 'morph' },
-  { value: 'spin', label: 'spin' },
+  { value: 'blink', label: 'blink' },
+  { value: 'dart', label: 'dart' },
 ];
 
 const COLOUR_MODES = [
@@ -51,17 +50,6 @@ const PALETTES: readonly { name: string; colors?: string[] }[] = [
   { name: 'tide', colors: ['#04202c', '#3bd6c6', '#89f0d8', '#e8fffb'] },
   { name: 'bauhaus', colors: ['#f4efe4', '#e4572e', '#1789bb', '#1b1b1b'] },
   { name: 'orchid', colors: ['#1a0f2b', '#c084fc', '#f0abfc', '#ede9fe'] },
-];
-
-const SAMPLE_SEEDS = [
-  'ada@lovelace.dev',
-  'grace-hopper',
-  'katherine.johnson',
-  'alan.turing',
-  'margaret-hamilton',
-  'radia-perlman',
-  'barbara.liskov',
-  'shafi@goldwasser.io',
 ];
 
 /** Deterministic-looking but genuinely random — this only picks a new seed. */
@@ -196,8 +184,8 @@ export function Playground() {
           />
         </Field>
 
-        <Field label="Animation">
-          <ToggleGroup value={animation} options={ANIMATIONS} onChange={setAnimation} columns={4} />
+        <Field label="Animation" hint={variant === 'organic' ? 'eyes' : 'organic only'}>
+          <ToggleGroup value={animation} options={ANIMATIONS} onChange={setAnimation} columns={3} />
         </Field>
 
         <Field label="Palette" hint={colors ? `${colors.length} colors` : 'from seed'}>
@@ -287,34 +275,6 @@ export function Playground() {
           </div>
         </div>
 
-        <div className="border border-line bg-surface">
-          <div className="border-b border-line px-4 py-2.5 font-mono text-[10px] uppercase tracking-[0.18em] text-muted">
-            Try a seed
-          </div>
-          <div className="grid grid-cols-4 gap-px bg-line">
-            {SAMPLE_SEEDS.map((sample) => (
-              <button
-                key={sample}
-                type="button"
-                title={sample}
-                onClick={() => setSeed(sample)}
-                className="bg-surface p-3 transition-colors hover:bg-raised"
-              >
-                <Morphatar
-                  seed={sample}
-                  variant={variant}
-                  mask={mask}
-                  complexity={complexity}
-                  multicolor={multicolor}
-                  colors={colors}
-                  background={background}
-                  size="100%"
-                  className="w-full"
-                />
-              </button>
-            ))}
-          </div>
-        </div>
       </section>
     </div>
   );
