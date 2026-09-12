@@ -5,6 +5,7 @@ out/
 *.tsbuildinfo
 .DS_Store
 .env*.local
+.vercel
 .claude/
 CLAUDE.md
 CLAUDE.local.md
