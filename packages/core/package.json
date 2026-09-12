@@ -4,7 +4,7 @@
   "description": "Deterministic algorithmic avatar generator. Zero dependencies, raw SVG output.",
   "license": "MIT",
   "author": "Saransh Hardaha",
-  "homepage": "https://github.com/saranshhardaha/morphatar/tree/main/packages/core#readme",
+  "homepage": "https://morphatar.vercel.app",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/saranshhardaha/morphatar.git",

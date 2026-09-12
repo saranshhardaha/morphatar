@@ -4,7 +4,7 @@
   "description": "React wrapper for Morphatar — deterministic algorithmic avatars.",
   "license": "MIT",
   "author": "Saransh Hardaha",
-  "homepage": "https://github.com/saranshhardaha/morphatar/tree/main/packages/react#readme",
+  "homepage": "https://morphatar.vercel.app",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/saranshhardaha/morphatar.git",
