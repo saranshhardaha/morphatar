@@ -1,6 +1,6 @@
 {
   "name": "@morphatar/core",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Deterministic algorithmic avatar generator. Zero dependencies, raw SVG output.",
   "license": "MIT",
   "author": "Saransh Hardaha",

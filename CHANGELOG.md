@@ -7,7 +7,7 @@ rendered output changes every existing avatar**. Those are marked below, and the
 golden fixture in `packages/core/test/fixtures` exists to make them impossible to
 ship by accident.
 
-## 0.2.0 — unreleased
+## 0.2.0 — 2026-09-13
 
 Metadata only. Rendered output is byte-identical to 0.1.1.
 
