@@ -1,11 +1,20 @@
 # @morphatar/core
 
+[![npm](https://img.shields.io/npm/v/@morphatar/core)](https://www.npmjs.com/package/@morphatar/core)
+[![min+gzip](https://img.shields.io/bundlephobia/minzip/@morphatar/core)](https://bundlephobia.com/package/@morphatar/core)
+![dependencies](https://img.shields.io/badge/dependencies-0-brightgreen)
+[![license](https://img.shields.io/npm/l/@morphatar/core)](https://github.com/saranshhardaha/morphatar/blob/master/LICENSE)
+
 Zero-dependency, deterministic algorithmic avatar generator.
+
+[![Twenty-four Morphatar avatars: organic blobs with eyes, geometric grids and pixel identicons](https://morphatar.vercel.app/hero.svg)](https://morphatar.vercel.app)
 
 One seed in, the same SVG out — on every machine, in every runtime, forever.
 No `Math.random()`, no canvas, no network, no images to host.
 
-- **~6 KB gzipped**, 0 runtime dependencies, tree-shakeable (`sideEffects: false`)
+**[Playground](https://morphatar.vercel.app)** · **[Try on StackBlitz](https://stackblitz.com/github/saranshhardaha/morphatar/tree/master/examples/vanilla)** · **[GitHub](https://github.com/saranshhardaha/morphatar)**
+
+- **~4.2 KB min+gzip**, 0 runtime dependencies, tree-shakeable (`sideEffects: false`)
 - **3 variants** — `organic` blob with eyes, `geometric` Bauhaus grid, `pixel` identicon
 - **Accessible by default** — generated colours clear WCAG AA 4.5:1 contrast
 - **SSR-safe** — byte-identical output on server and client, collision-free ids
@@ -57,7 +66,47 @@ img.src = morphatarDataUri({ seed: user.id, size: 48 });
 img.alt = `${user.name}'s avatar`;
 ```
 
-### Served from an HTTP endpoint
+### In Vue, Svelte, Solid or Astro
+
+The output is a string that is safe to inject, so every framework is one line:
+
+```vue
+<!-- Vue -->
+<span v-html="morphatar({ seed, size: 40 })" />
+```
+
+```svelte
+<!-- Svelte -->
+{@html morphatar({ seed, size: 40 })}
+```
+
+```tsx
+// Solid
+<span innerHTML={morphatar({ seed: props.seed, size: 40 })} />
+```
+
+```astro
+<!-- Astro: no client JavaScript -->
+<Fragment set:html={morphatar({ seed, size: 40 })} />
+```
+
+Full component examples are in the
+[main README](https://github.com/saranshhardaha/morphatar#any-framework).
+
+### Without installing anything
+
+A hosted endpoint renders avatars from query parameters, for Markdown, CMS
+fields or prototypes:
+
+```html
+<img src="https://morphatar.vercel.app/api/avatar?seed=grace-hopper&variant=pixel&size=96" alt="" width="96" height="96">
+```
+
+Every option is a query parameter; see the
+[parameter table](https://github.com/saranshhardaha/morphatar#hosted-endpoint).
+For production traffic, serve avatars from your own app instead.
+
+### Served from your own endpoint
 
 Output never changes for the same options, so responses can be cached forever.
 
@@ -65,8 +114,9 @@ Output never changes for the same options, so responses can be cached forever.
 // Next.js App Router: app/avatar/[seed]/route.ts
 import { morphatar } from '@morphatar/core';
 
-export function GET(_req: Request, { params }: { params: { seed: string } }) {
-  return new Response(morphatar({ seed: params.seed, size: 128 }), {
+export async function GET(_req: Request, { params }: { params: Promise<{ seed: string }> }) {
+  const { seed } = await params;
+  return new Response(morphatar({ seed, size: 128 }), {
     headers: {
       'Content-Type': 'image/svg+xml',
       'Cache-Control': 'public, max-age=31536000, immutable',

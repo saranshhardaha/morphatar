@@ -1,12 +1,43 @@
 # Morphatar
 
+[![npm](https://img.shields.io/npm/v/@morphatar/core?label=%40morphatar%2Fcore)](https://www.npmjs.com/package/@morphatar/core)
+[![npm](https://img.shields.io/npm/v/@morphatar/react?label=%40morphatar%2Freact)](https://www.npmjs.com/package/@morphatar/react)
+[![min+gzip](https://img.shields.io/bundlephobia/minzip/@morphatar/core)](https://bundlephobia.com/package/@morphatar/core)
+![dependencies](https://img.shields.io/badge/dependencies-0-brightgreen)
+[![CI](https://github.com/saranshhardaha/morphatar/actions/workflows/ci.yml/badge.svg)](https://github.com/saranshhardaha/morphatar/actions/workflows/ci.yml)
+[![license](https://img.shields.io/npm/l/@morphatar/core)](LICENSE)
+
 Zero-dependency, deterministic algorithmic avatar generator.
+
+<p align="center">
+  <a href="https://morphatar.vercel.app"><img src="apps/web/public/hero.svg" alt="Twenty-four Morphatar avatars: organic blobs with eyes, geometric grids and pixel identicons" width="824"></a>
+</p>
 
 One seed in, the same SVG out — on every machine, in every runtime, forever.
 No `Math.random()`, no canvas, no network, no images to host.
 
 ```
-6.0 KB gzipped · 0 runtime dependencies · 3 shape variants · 6 expressions
+~4.2 KB min+gzip · 0 runtime dependencies · 3 shape variants · 6 expressions
+```
+
+## Try it
+
+- **[Playground](https://morphatar.vercel.app)** — every option, live.
+- **StackBlitz** — [React](https://stackblitz.com/github/saranshhardaha/morphatar/tree/master/examples/react) · [vanilla JS](https://stackblitz.com/github/saranshhardaha/morphatar/tree/master/examples/vanilla)
+- **No install at all** — straight from a CDN:
+
+```html
+<div id="avatar"></div>
+<script type="module">
+  import { morphatar } from 'https://cdn.jsdelivr.net/npm/@morphatar/core/+esm';
+  document.getElementById('avatar').innerHTML = morphatar({ seed: 'grace-hopper', size: 96 });
+</script>
+```
+
+- **Not even JavaScript** — an `<img>` pointed at the [hosted endpoint](#hosted-endpoint):
+
+```html
+<img src="https://morphatar.vercel.app/api/avatar?seed=grace-hopper&size=96" alt="" width="96" height="96">
 ```
 
 ## Packages
@@ -15,7 +46,8 @@ No `Math.random()`, no canvas, no network, no images to host.
 | --- | --- |
 | [`@morphatar/core`](packages/core#readme) | Pure TypeScript engine. Takes options, returns a raw `<svg>` string. |
 | [`@morphatar/react`](packages/react#readme) | ~40-line React wrapper around the core, memoised with `useMemo`. |
-| `apps/web` | Next.js 14 playground for exploring the parameter space. |
+| `apps/web` | Next.js 16 playground, plus the hosted `/api/avatar` endpoint. |
+| `examples/` | Standalone Vite apps (React, vanilla) behind the StackBlitz links. |
 
 ## Install
 
@@ -41,6 +73,140 @@ const uri = morphatarDataUri({ seed: 'ada@lovelace.dev' }); // for <img src>
 
 The core is framework-agnostic and side-effect free, so it runs the same in a
 React Server Component, an edge function, a CLI or a `<script>` tag.
+
+### Any framework
+
+The core returns a string, so every framework is one line of "render this
+HTML". The output is safe to inject: caller-supplied values are escaped and the
+seed never reaches the markup.
+
+**Vue**
+
+```vue
+<script setup lang="ts">
+import { computed } from 'vue';
+import { morphatar } from '@morphatar/core';
+
+const props = defineProps<{ seed: string }>();
+const svg = computed(() => morphatar({ seed: props.seed, size: 40 }));
+</script>
+
+<template>
+  <span v-html="svg" />
+</template>
+```
+
+**Svelte 5**
+
+```svelte
+<script lang="ts">
+  import { morphatar } from '@morphatar/core';
+
+  let { seed }: { seed: string } = $props();
+</script>
+
+{@html morphatar({ seed, size: 40 })}
+```
+
+**Solid**
+
+```tsx
+import { morphatar } from '@morphatar/core';
+
+export function Avatar(props: { seed: string }) {
+  return <span innerHTML={morphatar({ seed: props.seed, size: 40 })} />;
+}
+```
+
+**Astro** — rendered at build or request time, zero client JavaScript:
+
+```astro
+---
+import { morphatar } from '@morphatar/core';
+const { seed } = Astro.props;
+---
+<Fragment set:html={morphatar({ seed, size: 40 })} />
+```
+
+## Hosted endpoint
+
+`https://morphatar.vercel.app/api/avatar` renders an avatar from query
+parameters, for places that cannot install a package: Markdown, a CMS field, a
+no-build prototype.
+
+```md
+![avatar](https://morphatar.vercel.app/api/avatar?seed=ada&variant=pixel&size=64)
+```
+
+| Parameter | Values | Default |
+| --- | --- | --- |
+| `seed` | any string, up to 256 characters | — (required) |
+| `variant` | `organic`, `geometric`, `pixel` | `organic` |
+| `mask` | `circle`, `squircle`, `hexagon`, `none` | `squircle` |
+| `complexity` | integer `1`–`10` | `5` |
+| `multicolor` | `true`, `false` | `false` |
+| `animation` | `none`, `blink`, `dart` | `none` |
+| `background` | CSS colour; bare hex like `09090b` is accepted | per variant |
+| `colors` | comma-separated CSS colours, up to 8 | from seed |
+| `size` | integer px, `16`–`1024` | `256` |
+| `title` | accessible name, up to 128 characters | `Avatar` |
+
+Invalid values return `400` with a plain-text reason. Responses are
+`image/svg+xml`, CORS-enabled and CDN-cached. For production traffic, serve
+avatars from your own app — the core is one import, see
+[the route handler recipe](packages/core#served-from-your-own-endpoint).
+
+## Recipes
+
+**Fallback for users without a photo**
+
+```tsx
+<img src={user.photoUrl ?? morphatarDataUri({ seed: user.id, size: 40 })} alt="" width={40} height={40} />
+```
+
+**Swap in when a remote photo fails to load**
+
+```ts
+img.addEventListener('error', () => {
+  img.src = morphatarDataUri({ seed: user.id, size: 40 });
+}, { once: true });
+```
+
+**CSS background**
+
+```ts
+el.style.backgroundImage = `url("${morphatarDataUri({ seed: user.id })}")`;
+```
+
+**Theme the UI around an avatar** — resolve a seed's colours without rendering:
+
+```ts
+const { background, foreground } = morphatarPalette({ seed: user.id });
+card.style.setProperty('--accent', foreground[0]);
+```
+
+## How it compares
+
+| | Morphatar | boring-avatars | DiceBear (core + identicon) | jdenticon | minidenticons |
+| --- | --- | --- | --- | --- | --- |
+| Min + gzip | 4.2 KB | 2.8 KB | 4.2 KB | 2.8 KB | 0.5 KB |
+| Runtime dependencies | 0 | 0 | 1 | 1 | 0 |
+| Frameworks | any | React only | any | any | any |
+| Output | SVG string | React element | SVG string | SVG string or canvas | SVG string |
+
+Sizes are each library's main render call bundled with esbuild (minified, React
+external), measured September 2026 against boring-avatars 2.0.4, DiceBear 9.4,
+jdenticon 3.3.0 and minidenticons 4.2.1.
+
+What Morphatar adds on top of a deterministic SVG:
+
+- **Characters, not just patterns** — organic blobs get one of six expressions,
+  with optional `blink` and `dart` eye motion.
+- **A contrast guarantee** — generated foregrounds clear WCAG AA 4.5:1 against
+  the background, including one you pass in.
+- **SSR without surprises** — byte-identical server and client output, and
+  content-derived ids so many avatars share a page without clip-path collisions.
+- **Stable colours** — changing `variant` or `complexity` keeps a seed's palette.
 
 ## API
 
@@ -173,6 +339,7 @@ pnpm test           # determinism, contrast and markup tests (node:test, no deps
 pnpm size           # enforce the 8 KB gzipped budget for @morphatar/core
 pnpm dev            # run the Next.js playground
 pnpm typecheck      # every workspace
+pnpm hero           # regenerate apps/web/public/hero.svg after output changes
 ```
 
 The test suite is the contract: it pins the FNV-1a reference vectors, asserts

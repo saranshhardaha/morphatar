@@ -1,9 +1,17 @@
 # @morphatar/react
 
+[![npm](https://img.shields.io/npm/v/@morphatar/react)](https://www.npmjs.com/package/@morphatar/react)
+[![min+gzip](https://img.shields.io/bundlephobia/minzip/@morphatar/react)](https://bundlephobia.com/package/@morphatar/react)
+[![license](https://img.shields.io/npm/l/@morphatar/react)](https://github.com/saranshhardaha/morphatar/blob/master/LICENSE)
+
 React component for [Morphatar](https://github.com/saranshhardaha/morphatar) —
 deterministic, zero-dependency algorithmic avatars.
 
+[![Twenty-four Morphatar avatars: organic blobs with eyes, geometric grids and pixel identicons](https://morphatar.vercel.app/hero.svg)](https://morphatar.vercel.app)
+
 One seed in, the same avatar out, on the server and in the browser.
+
+**[Playground](https://morphatar.vercel.app)** · **[Try on StackBlitz](https://stackblitz.com/github/saranshhardaha/morphatar/tree/master/examples/react)** · **[GitHub](https://github.com/saranshhardaha/morphatar)**
 
 ## Install
 

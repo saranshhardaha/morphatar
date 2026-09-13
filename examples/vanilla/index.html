@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Morphatar — vanilla</title>
+    <style>
+      body { font-family: system-ui, sans-serif; margin: 2rem; background: #fafafa; color: #18181b; }
+      input { font: inherit; padding: 0.4rem 0.6rem; width: 18rem; }
+      #avatars { display: flex; gap: 1rem; margin-top: 1.5rem; }
+    </style>
+  </head>
+  <body>
+    <label>
+      Seed
+      <input id="seed" value="ada@lovelace.dev" />
+    </label>
+    <div id="avatars"></div>
+    <script type="module" src="/main.js"></script>
+  </body>
+</html>

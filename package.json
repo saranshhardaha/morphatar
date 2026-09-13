@@ -14,6 +14,7 @@
     "test": "pnpm -r test",
     "typecheck": "pnpm -r typecheck",
     "size": "node scripts/size.mjs",
+    "hero": "pnpm build && node scripts/readme-hero.mjs",
     "release:check": "pnpm build && pnpm typecheck && pnpm test && pnpm size && pnpm -r publish --dry-run --no-git-checks",
     "release": "pnpm -r publish"
   },
