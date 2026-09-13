@@ -4,12 +4,14 @@
   "version": "0.1.0",
   "description": "Zero-dependency, deterministic algorithmic avatar generator.",
   "packageManager": "pnpm@10.33.0",
-  "engines": { "node": ">=18" },
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "build": "pnpm --filter @morphatar/core build && pnpm --filter @morphatar/react build",
     "build:web": "pnpm build && pnpm --filter @morphatar/web build",
     "dev": "pnpm build && pnpm --filter @morphatar/web dev",
-    "test": "pnpm --filter @morphatar/core test",
+    "test": "pnpm -r test",
     "typecheck": "pnpm -r typecheck",
     "size": "node scripts/size.mjs",
     "release:check": "pnpm build && pnpm typecheck && pnpm test && pnpm size && pnpm -r publish --dry-run --no-git-checks",

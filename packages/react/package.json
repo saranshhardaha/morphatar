@@ -49,7 +49,8 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "prepublishOnly": "pnpm --filter @morphatar/core build && pnpm build"
+    "prepublishOnly": "pnpm --filter @morphatar/core build && pnpm build",
+    "test": "pnpm --filter @morphatar/core build && pnpm build && node --test test/*.test.js"
   },
   "peerDependencies": {
     "react": ">=17"
@@ -59,6 +60,8 @@
   },
   "devDependencies": {
     "@types/react": "^18.3.12",
-    "react": "^18.3.1"
+    "@types/react-dom": "^18.3.7",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
   }
 }
