@@ -183,12 +183,6 @@ never escaped and a hostile one never breaks out of an attribute, that adding a
 background does not reshuffle the geometry, and sweeps 300 seeds for the
 contrast floor.
 
-## Publishing
-
-Releases go to npm with `pnpm` (never plain `npm publish`, which would ship the
-`workspace:*` dependency literally). Run `pnpm release:check` for a full dry
-run, then see [PUBLISHING.md](PUBLISHING.md) for the step-by-step guide.
-
 ## Licence
 
 MIT.
