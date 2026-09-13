@@ -1,21 +1,7 @@
 import type { Metadata } from 'next';
-import './globals.css';
 
-/**
- * Absolute base for OG and canonical URLs.
- *
- * Vercel exposes the project's production domain at build time, and each
- * preview its own host, so metadata resolves correctly in both without naming
- * a domain here. A custom domain later is a one-line override via
- * NEXT_PUBLIC_SITE_URL.
- */
-const siteUrl =
-  process.env.NEXT_PUBLIC_SITE_URL ??
-  (process.env.VERCEL_PROJECT_PRODUCTION_URL
-    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-    : process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : 'http://localhost:3000');
+import { siteUrl } from './site-url';
+import './globals.css';
 
 export const metadata: Metadata = {
   title: 'Morphatar — deterministic algorithmic avatars',
@@ -24,7 +10,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   openGraph: {
     title: 'Morphatar',
-    description: 'Deterministic algorithmic avatars in under 5 KB.',
+    description: 'Deterministic algorithmic avatars in about 6 KB, with zero dependencies.',
     type: 'website',
   },
 };
