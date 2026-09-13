@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Reads the pinned pnpm version from package.json's packageManager field.
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      # Includes the golden fixture: a failure here means existing avatars
+      # would change, which is a deliberate decision rather than a flaky test.
+      - name: Test
+        run: pnpm test
+
+      - name: Size budget
+        run: pnpm size
+
+      # The playground is not published, but it must still compile.
+      - name: Build the playground
+        run: pnpm --filter @morphatar/web build
