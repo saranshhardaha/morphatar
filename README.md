@@ -6,7 +6,7 @@ One seed in, the same SVG out — on every machine, in every runtime, forever.
 No `Math.random()`, no canvas, no network, no images to host.
 
 ```
-6.1 KB gzipped · 0 runtime dependencies · 3 shape variants · 6 expressions
+6.0 KB gzipped · 0 runtime dependencies · 3 shape variants · 6 expressions
 ```
 
 ## Packages

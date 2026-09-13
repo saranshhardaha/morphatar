@@ -1,0 +1,55 @@
+name: Release
+
+# Publishes when a v* tag is pushed. Uses npm trusted publishing (OIDC), so no
+# token lives on anyone's laptop or in repository secrets, and each release
+# carries a provenance attestation.
+#
+# One-time setup, per package, on npmjs.com:
+#   Settings -> Trusted Publisher -> GitHub Actions
+#   owner saranshhardaha, repository morphatar, workflow release.yml
+# The package must already exist, so the first publish of a new package name is
+# still manual.
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+  id-token: write # lets npm verify this workflow over OIDC
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24 # ships npm 11, which supports trusted publishing
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+
+      - run: pnpm install --frozen-lockfile
+
+      # Same gates as CI. A release that cannot pass them should not ship.
+      - run: pnpm build
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm size
+
+      # pnpm pack rewrites the workspace:* dependency to the real version;
+      # plain npm publish would ship it literally and be uninstallable.
+      - name: Pack
+        run: |
+          mkdir -p .release
+          (cd packages/core && pnpm pack --pack-destination ../../.release)
+          (cd packages/react && pnpm pack --pack-destination ../../.release)
+
+      # Core first: react's dependency pins the version being published.
+      - name: Publish
+        run: |
+          npm publish .release/morphatar-core-*.tgz --access public
+          npm publish .release/morphatar-react-*.tgz --access public
